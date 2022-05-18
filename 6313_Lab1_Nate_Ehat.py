@@ -15,9 +15,19 @@ import seaborn as sns
 from statsmodels.graphics.gofplots import qqplot
 from statsmodels.tsa.stattools import adfuller
 
+import datetime as dt
 import scipy.stats as st
 
+from toolbox import *
+
 print("\nIMPORT SUCCESS")
+
+#%%
+# VARIABLE DIRECTORY
+current_folder = '/Users/nehat312/GitHub/Time-Series-Analysis-and-Moldeing/'
+filepath = 'tute1'
+
+print("\nDIRECTORY ASSIGNED")
 
 #%%
 # 1. Load the time series data called ‘tute1.csv’ [ the dataset can be found on the course GitHub].
@@ -25,12 +35,59 @@ print("\nIMPORT SUCCESS")
     # Sales contains quarterly sales
     # AdBudget is the advertisement budget
     # GDP is the gross domestic product for a small company.
+
+# By saving the file to '.xlsx' format:
+# Saves lots of time - prior to import: quickly convert all dates to datetime format
+
+tute_cols = ['Date', 'Sales', 'AdBudget', 'GDP']
+
+tute = pd.read_excel(filepath + '.xlsx', index_col='Date')
+#tute = pd.read_csv(filepath + '.csv', index_col=['Unnamed: 0']) #parse_dates=True, infer_datetime_format=True parse_dates=['Unnamed: 0'], infer_datetime_format=True
+
+print("\nIMPORT SUCCESS")
+
+#%%
+## INITIAL EDA
+print(tute.info())
+print(tute.head())
+
+#%%
+# IDENTIFY / FILTER 'OUTLIER' DATES BEYOND 2000 (EXCLUDED PER LAB GUIDELINES)
+print(tute[0:80])
+print('*'*75)
+print(tute[80:101])
+
+#%%
+# IDENTIFY / FILTER 'OUTLIER' DATES BEYOND 2000 (EXCLUDED PER LAB GUIDELINES)
+
+tute = tute[0:80]
+print(tute.info())
+
+#%%
+print(tute.columns)
+print(tute.index)
+
+#%%
 # Plot Sales, AdBudget and GPD versus time step in one graph.
 # Add grid and appropriate title, legend to each plot.
 # The x-axis is the time, and it should show the time (year).
-# The y-axis is the USD($). The graph should be look like below.
+# The y-axis is the USD($).
 
+#Sales
 
+ax = df["Sales"].plot(legend=True, title= "Daily Sales March 1, 1981- June 8, 1981")
+ax.set_ylabel("Sales")
+plt.show()
+#AdBudget
+
+ax=df['AdBudget'].plot(legend=True, title="Daily AdBudget March 1, 1981- June 8, 1981")
+ax.set_ylabel("AdBudget")
+plt.show()
+#GDP
+
+ax=df['GDP'].plot(legend=True, title="Daily GDP March 1, 1981- June 8, 1981")
+ax.set_ylabel('GDP')
+plt.show()
 
 
 #%%
@@ -40,7 +97,12 @@ print("\nIMPORT SUCCESS")
     # c. The GDP mean is :--- and the variance is : -------- with standard deviation : --- median:----
 
 
-print(f"K-S test: statistics={kstest_x[0]:.5f}, p-value={kstest_x[1]:.5f}")
+print("The Sales mean is:",df['Sales'].mean(), "and the variance is:",df['Sales'].var(), "with standard deviation:",
+df['Sales'].std())
+print("The AdBudget mean is:",df['AdBudget'].mean(), "and the variance is:",df['AdBudget'].var(), "with standard deviation:",
+df['AdBudget'].std())
+print("The GDP mean is:",df['GDP'].mean(), "and the variance is:",df['GDP'].var(), "with standard deviation:",
+df['GDP'].std())
 
 
 #%%
