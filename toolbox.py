@@ -19,6 +19,7 @@ print("\nIMPORT SUCCESS")
 # GRAPH FUNCTIONS: return extended index arrays (original array + h_steps)
 
 #%%
+### DIFFERENCE
 def differencer(series, interval, index):
     s_len = len(series)
     diff = [0] * interval
@@ -28,16 +29,16 @@ def differencer(series, interval, index):
     return df
 
 #%%
+### LOG TRANSFORM
 def log_transform(series, index):
     log_series = np.log(series)
     df = pd.DataFrame(index=index)
     df['log_transform'] = log_series
     return df
 
-
-
 #%%
-def cal_rolling_mean_var(series):
+### ROLLING MEAN + VARIANCE
+def rolling_mean_var(series):
     length = len(series)
     # date = []
     mean = []
@@ -51,13 +52,26 @@ def cal_rolling_mean_var(series):
             mean.append(series[row_slice].mean())
             var.append(0)
         # date.append(df.iloc[y, date_index])
-    dict_rolling = {'Rolling Mean': mean, 'Rolling Variance': var}
-    new_df = pd.DataFrame(dict_rolling, columns=['Rolling Mean', 'Rolling Variance'])
-
-    return new_df
+    dict_rolling = {'ROLLING MEAN': mean, 'ROLLING VARIANCE': var}
+    roll_mean_var_df = pd.DataFrame(dict_rolling, columns=['ROLLING MEAN', 'ROLLING VARIANCE'])
+    return roll_mean_var_df
 
 #%%
-def correlation_coefficent_cal(x, y):
+### ROLLING MEAN + VARIANCE - PLOTS
+def rolling_mean_var_plots(df, col_index):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10,8))
+    fig.suptitle(f'ROLLING MEAN / VARIANCE OVER TIME - {col_index}')
+    ax1.plot(df.index, df['ROLLING MEAN'])
+    ax1.set_ylabel('ROLLING MEAN')
+    ax2.plot(df.index, df['ROLLING VARIANCE'])
+    ax2.set_xlabel('DATE')
+    ax2.set_ylabel('ROLLING VARIANCE')
+    plt.show()
+    return
+
+#%%
+### CORRELATION COEFFICIENT
+def correlation_coefficent(x, y):
     x_mean = np.nanmean(np.array(x))
     y_mean = np.nanmean(np.array(y))
     x_r = np.subtract(x, x_mean)
@@ -69,13 +83,14 @@ def correlation_coefficent_cal(x, y):
     if denominator != 0:
         return round((numerator / denominator), 2)
     else:
-        return print('Divide by zero??')
+        return print('DIVIDE BY ZERO')
 
 #%%
+### KPSS TEST
 def kpss_test(timeseries):
-    kpsstest = kpss(timeseries, regression='c', nlags="auto")
-    kpss_output = [x for x in kpsstest[0:3]]
-    crit_dict = kpsstest[3]
+    kpss_test = kpss(timeseries, regression='c', nlags="auto")
+    kpss_output = [x for x in kpss_test[0:3]]
+    crit_dict = kpss_test[3]
     crit_values = list(crit_dict.keys())
     for x in crit_values:
         kpss_output.append(crit_dict.get(x))
@@ -86,7 +101,8 @@ def kpss_test(timeseries):
     return df
 
 #%%
-def adf_calc(x, df):
+### ADF TEST
+def adf_test(x, df):
     df = df.dropna()
     result = adfuller(df[x])
     print("ADF Statistic: %f" % result[0])
@@ -103,7 +119,8 @@ def adf_calc(x, df):
                       index=['Column'])
     return df
 
-
+#%%
+### ADF / KPSS STATISTIC
 def adf_kpss_statistic(timeseries):
     adf = adfuller(timeseries)[0]
     kpss_ = kpss(timeseries, regression='c', nlags="auto")[0]
@@ -111,7 +128,8 @@ def adf_kpss_statistic(timeseries):
     return stats
 
 #%%
-def simple_time_series(y_column, time_column, df):
+### PROCESS TIME SERIES - WORK IN PROGRESS
+def process_time_series(y_column, time_column, df):
     """
     :param y_column:
     :param time_column:
@@ -127,27 +145,5 @@ def simple_time_series(y_column, time_column, df):
     plt.grid()
     print(f"{y_column} saved!")
     return plt.show()
-
-#%%
-def plotting_rolling(name, df):
-    """
-    :param name:
-    :param df:
-    :return:
-    """
-    fig, (ax1, ax2) = plt.subplots(2, 1)
-    fig.suptitle('Rolling mean and var vs time')
-
-    ax1.plot(df.index, df['Rolling Mean'])
-    ax1.set_ylabel('Rolling Mean')
-
-    ax2.plot(df.index, df['Rolling Variance'])
-    ax2.set_xlabel('Date')
-    ax2.set_ylabel('Rolling Variance')
-    plt.show()
-    return
-
-#%%
-
 
 #%%
