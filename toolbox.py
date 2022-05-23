@@ -77,9 +77,9 @@ def correlation_coefficent(x, y):
     x_r = np.subtract(x, x_mean)
     y_r = np.subtract(y, y_mean)
     numerator = np.dot(x_r, y_r)
-    denom_x = np.nansum((x_r) ** 2)
-    denom_y = np.nansum((y_r) ** 2)
-    denominator = (denom_x * denom_y) ** (1 / 2)
+    denominator_x = np.nansum((x_r) ** 2)
+    denominator_y = np.nansum((y_r) ** 2)
+    denominator = (denominator_x * denominator_y) ** (1 / 2)
     if denominator != 0:
         return round((numerator / denominator), 2)
     else:
@@ -88,7 +88,7 @@ def correlation_coefficent(x, y):
 #%%
 ### KPSS TEST
 def kpss_test(timeseries):
-    kpss_test = kpss(timeseries, regression='c', nlags="auto")
+    kpss_test = kpss(timeseries, regression='c', nlags='auto')
     kpss_output = [x for x in kpss_test[0:3]]
     crit_dict = kpss_test[3]
     crit_values = list(crit_dict.keys())
