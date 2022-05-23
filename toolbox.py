@@ -23,9 +23,9 @@ print("\nIMPORT SUCCESS")
 def differencer(series, interval, index):
     s_len = len(series)
     diff = [0] * interval
-    [diff.append(series[x + interval] - series[x]) for x in range(0, s_len - interval)]
+    [diff.append(series[j + interval] - series[j]) for j in range(0, s_len - interval)]
     df = pd.DataFrame(index=index)
-    df[f"{interval}_diff"] = diff
+    df[f'{interval}diff'] = diff
     return df
 
 #%%
@@ -145,5 +145,17 @@ def process_time_series(y_column, time_column, df):
     plt.grid()
     print(f"{y_column} saved!")
     return plt.show()
+
+
+#%%
+def difference(dataset, interval): #
+    diff = []
+    for i in range(interval, len(dataset)):
+        values = dataset[i] - dataset[i-interval]
+        diff.append(values)
+    return diff
+
+#%%
+
 
 #%%
