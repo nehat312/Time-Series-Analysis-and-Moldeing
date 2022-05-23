@@ -25,9 +25,14 @@ print("\nIMPORT SUCCESS")
 #%%
 # VARIABLE DIRECTORY
 current_folder = '/Users/nehat312/GitHub/Time-Series-Analysis-and-Moldeing/'
-filepath = 'tute1'
+tute_filepath = 'tute1'
+passenger_filepath = 'AirPassengers'
 
 print("\nDIRECTORY ASSIGNED")
+
+#%%
+## VISUAL SETTINGS
+sns.set_style('whitegrid')
 
 #%%
 # 1. Load the time series data called ‘tute1.csv’ [ the dataset can be found on the course GitHub].
@@ -42,16 +47,14 @@ print("\nDIRECTORY ASSIGNED")
 
 tute_cols = ['Date', 'Sales', 'AdBudget', 'GDP']
 
-tute = pd.read_excel(filepath + '.xlsx', index_col='Date')
-
-#tute = pd.read_csv(filepath + '.csv', index_col=['Unnamed: 0'])
-# #parse_dates=True, infer_datetime_format=True parse_dates=['Unnamed: 0'], infer_datetime_format=True
+tute = pd.read_excel(tute_filepath + '.xlsx', index_col='Date')
 
 print("\nIMPORT SUCCESS")
 
 #%%
 ## INITIAL EDA
 print(tute.info())
+print('*'*75)
 print(tute.head())
 
 #%%
@@ -69,11 +72,6 @@ print(tute.info())
 #%%
 print(tute.columns)
 print(tute.index)
-
-
-#%%
-## VISUAL SETTINGS
-sns.set_style('whitegrid')
 
 #%%
 # Plot Sales, AdBudget and GPD versus time step in one graph.
@@ -182,9 +180,79 @@ print('GDP:')
 print(kpss_test(tute['GDP']))
 print('*'*100)
 
-      #%%
+#%%
 # 7. Repeat step 1 - 6 with ‘AirPassengers.csv’ on the GitHub.
 # This timeseries dataset is univariate with  passengers as an attribute.
+
+passengers = pd.read_csv(passenger_filepath + '.csv') # #parse_dates=True, infer_datetime_format=True, parse_dates=['Unnamed: 0']
+print("\nIMPORT SUCCESS")
+
+#%%
+## INITIAL EDA
+print(passengers.info())
+print('*'*100)
+print(passengers.head())
+#%%
+# PRE-PROCESSING
+#passengers['Passengers'] = passengers['#Passengers']
+#passengers.drop(columns='#Passengers', inplace=True)
+#print(passengers.columns)
+
+#%%
+print(passengers.columns)
+print('*'*100)
+print(passengers.index)
+
+#%%
+passengers['Month'] = pd.to_datetime(passengers['Month'])
+print(passengers.info())
+
+#%%
+## DETERMINE START / END DATES
+print(passengers.Month.min())
+print('*'*50)
+print(passengers.Month.max())
+
+#%%
+# PLOT
+#fig, axes = plt.subplots(1,1,figsize=(10,8))
+#passengers['#Passengers'].plot(legend=True)
+
+plt.figure(figsize=(10,8))
+sns.lineplot(x=passengers['Month'], y=passengers['#Passengers'])
+plt.title("AIR PASSENGERS (1949-1960)")
+plt.xlabel('DATE')
+plt.ylabel('PASSENGERS (#)')
+plt.tight_layout(pad=1)
+#plt.grid()
+plt.show()
+
+#%%
+# TIME SERIES STATISTICS
+print("#Passengers mean is:", passengers['#Passengers'].mean(),
+      "and the variance is:", passengers['#Passengers'].var(),
+      "with standard deviation:", passengers['#Passengers'].std())
+print('*'*150)
+
+#%%
+# SET COLUMN INDICES FOR CHART TITLES
+passengers_col_index = passengers.columns[1].upper()
+print(passengers_col_index)
+
+#%%
+rolling_mean_var_plots(rolling_mean_var(passengers['#Passengers']), passengers_col_index)
+
+#%%
+## ADF TEST
+print('ADF PASSENGERS:')
+print(adf_test(['#Passengers'], passengers))
+print('*'*100)
+
+#%%
+## KPSS TEST
+print('KPSS PASSENGERS:')
+print(kpss_test(passengers['#Passengers']))
+print('*'*100)
 
 #%%
 # 8.
@@ -201,6 +269,124 @@ print('*'*100)
     # Perform ADF-test and KPSS-test on the transformed dataset and display the results on the console.
         # This step should make the dataset stationary
         # rolling mean and variance is stabilize and the ADF-test confirms stationarity.
+
+#%%
+## FIRST-ORDER DIFFERENCING
+passengers_1diff = differencer(passengers['#Passengers'], 1, passengers['Month'])
+print(passengers_1diff)
+
+#%%
+## FIRST-ORDER DIFFERENCING - SET COLUMN INDICES FOR CHART TITLES
+passengers_1diff_col_index = passengers_1diff.columns[0].upper()
+print(passengers_1diff_col_index)
+
+#%%
+## FIRST-ORDER DIFFERENCING - GENERATE PLOTS
+rolling_mean_var_plots(rolling_mean_var(passengers_1diff), passengers_1diff_col_index)
+
+#%%
+print(passengers_1diff.columns)
+
+#%%
+## FIRST-ORDER DIFFERENCING - ADF TEST
+print('ADF FIRST-ORDER DIFF:')
+print(adf_test(['1diff'], passengers_1diff))
+print('*'*100)
+
+#%%
+## FIRST-ORDER DIFFERENCING - KPSS TEST
+print('KPSS FIRST-ORDER DIFF:')
+print(kpss_test(passengers_1diff['1diff']))
+print('*'*100)
+
+#%%
+## SECOND-ORDER DIFFERENCING
+passengers_2diff = differencer(passengers_1diff['1diff'], 2, passengers_1diff.index)
+print(passengers_2diff)
+
+#%%
+## SECOND-ORDER DIFFERENCING - SET COLUMN INDICES FOR CHART TITLES
+passengers_2diff_col_index = passengers_2diff.columns[0].upper()
+print(passengers_2diff_col_index)
+
+#%%
+## SECOND-ORDER DIFFERENCING - GENERATE PLOTS
+rolling_mean_var_plots(rolling_mean_var(passengers_2diff), passengers_2diff_col_index)
+
+#%%
+## SECOND-ORDER DIFFERENCING - ADF TEST
+print('ADF SECOND-ORDER DIFF:')
+print(adf_test(['2diff'], passengers_2diff))
+print('*'*100)
+
+#%%
+## SECOND-ORDER DIFFERENCING - KPSS TEST
+print('KPSS SECOND-ORDER DIFF:')
+print(kpss_test(passengers_2diff['2diff']))
+print('*'*100)
+
+#%%
+## THIRD-ORDER DIFFERENCING
+passengers_3diff = differencer(passengers_2diff['2diff'], 3, passengers_2diff.index)
+print(passengers_3diff)
+
+#%%
+## THIRD-ORDER DIFFERENCING - SET COLUMN INDICES FOR CHART TITLES
+passengers_3diff_col_index = passengers_3diff.columns[0].upper()
+print(passengers_3diff_col_index)
+
+#%%
+## THIRD-ORDER DIFFERENCING - GENERATE PLOTS
+rolling_mean_var_plots(rolling_mean_var(passengers_3diff), passengers_3diff_col_index)
+
+#%%
+## THIRD-ORDER DIFFERENCING - ADF TEST
+print('ADF THIRD-ORDER DIFF:')
+print(adf_test(['3diff'], passengers_3diff))
+print('*'*100)
+
+#%%
+## THIRD-ORDER DIFFERENCING - KPSS TEST
+print('KPSS THIRD-ORDER DIFF:')
+print(kpss_test(passengers_3diff['3diff']))
+print('*'*100)
+
+#%%
+## LOG TRANSFORMATION
+passengers_log = log_transform(passengers['#Passengers'], passengers.index)
+print(passengers_log)
+
+#%%
+## LOG TRANSFORMATION - SET COLUMN INDICES FOR CHART TITLES
+passengers_log_col_index = passengers_log.columns[0].upper()
+print(passengers_log_col_index)
+print(passengers_log.columns)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING
+passengers_log_1diff = differencer(passengers_log['log_transform'], 1, passengers_log.index)
+print(passengers_log_1diff)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING - SET COLUMN INDICES FOR CHART TITLES
+passengers_log_1diff_col_index = passengers_log_1diff.columns[0].upper()
+print(passengers_log_1diff_col_index)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING - GENERATE PLOTS
+rolling_mean_var_plots(rolling_mean_var(passengers_log_1diff), passengers_log_1diff_col_index)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING - ADF TEST
+print('ADF LOG FIRST-ORDER DIFF:')
+print(adf_test(['1diff'], passengers_log_1diff))
+print('*'*100)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING - KPSS TEST
+print('KPSS LOG FIRST-ORDER DIFF:')
+print(kpss_test(passengers_log_1diff['1diff']))
+print('*'*100)
 
 
 #%%
