@@ -76,12 +76,12 @@ def correlation_coefficent(x, y):
     y_mean = np.nanmean(np.array(y))
     x_r = np.subtract(x, x_mean)
     y_r = np.subtract(y, y_mean)
-    numerator = np.dot(x_r, y_r)
+    numerator_xy = np.dot(x_r, y_r)
     denominator_x = np.nansum((x_r) ** 2)
     denominator_y = np.nansum((y_r) ** 2)
-    denominator = (denominator_x * denominator_y) ** (1 / 2)
-    if denominator != 0:
-        return round((numerator / denominator), 2)
+    denominator_xy = (denominator_x * denominator_y) ** (1 / 2)
+    if denominator_xy != 0:
+        return round((numerator_xy / denominator_xy), 2)
     else:
         return print('DIVIDE BY ZERO')
 
