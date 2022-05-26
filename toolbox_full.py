@@ -162,7 +162,7 @@ def acfunc(series, lag):
     return round(r, 3)
 
 
-# %%'
+#%%
 def acf_df(series, lag):
     lag_list = [x for x in range(-lag, lag + 1, 1)]
     acf_value = [1]

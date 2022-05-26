@@ -156,6 +156,61 @@ def difference(dataset, interval): #
     return diff
 
 #%%
+def ACF_PACF_Plot(y, lags):
+    acf = sm.tsa.stattools.acf(y, nlags=lags)
+    pacf = sm.tsa.stattools.pacf(y, nlags=lags)
+    fig = plt.figure()
+    plt.subplot(211)
+    plt.title('ACF/PACF of the raw data')
+    plot_acf(y, ax=plt.gca(), lags=lags)
+    plt.subplot(212)
+    plot_pacf(y, ax=plt.gca(), lags=lags)
+    fig.tight_layout(pad=3)
+    plt.show()
+    return
+
+#%%
+def acfunc(series, lag):
+    if lag == len(series):
+        return 0
+    if lag == 0:
+        return 1
+    series = np.array(series)
+    mean = series.mean()
+    series_sub_mean = np.subtract(series, mean)
+    shifted_right = series_sub_mean[:-lag]
+    shifted_left = series_sub_mean[lag:]
+    denominator = np.sum(np.square(series_sub_mean))
+    numerator = np.sum(np.dot(shifted_right, shifted_left))
+    r = numerator / denominator
+    return round(r, 3)
+
+
+#%%
+def acf_df(series, lag):
+    lag_list = [x for x in range(-lag, lag + 1, 1)]
+    acf_value = [1]
+    for l in [x for x in range(1, lag + 1, 1)]:
+        x = acfunc(series, l)
+        acf_value.insert(0, x)
+        acf_value.append(x)
+    df = pd.DataFrame()
+    df['lags'] = lag_list
+    df['acf'] = acf_value
+    return df
+
+#%%
+def stem_acf(name, df, n):
+    plt.stem(df['lags'], df['acf'])
+    plt.title(f'ACF plot of {name}')
+    plt.xlabel('lags')
+    plt.ylabel('Autocorrelation value')
+    # markers = 1.96/((len(df)**(1/2)))
+    # plt.setp(markers, color='red',markers='0')
+    # plt.axhspan(-markers,markers,alpha=0.2,color='blue')
+    plt.fill_between(df['lags'], (1.96 / ((n) ** (1 / 2))), ((-1.96) / ((n) ** (1 / 2))), color='thistle')
+    plt.savefig('final-images/' + f'{name}.png', dpi=1000)
+    return plt.show()
 
 
 #%%
