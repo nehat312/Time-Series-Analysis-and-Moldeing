@@ -116,11 +116,16 @@ plt.legend(loc='best')
 plt.show()
 
 
-#%%
-acfunc(msft.Close.values, 20)
 
 #%%
-msft_col_index = df.columns[5].upper()
+aapl_col_index = df_Close.columns[5].upper()
+orcl_col_index = df_Close.columns[5].upper()
+tsla_col_index = df_Close.columns[5].upper()
+msft_col_index = df_Close.columns[5].upper()
+msft_col_index = df_Close.columns[5].upper()
+msft_col_index = df_Close.columns[5].upper()
+print(msft_col_index)
+#%%
 
 rolling_mean_var_plots(msft.Close.values, msft)
 #%%

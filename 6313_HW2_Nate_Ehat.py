@@ -82,7 +82,7 @@ plt.show()
 #%%
 print(f'SHAPE: {data.shape}')
 print(f'MEAN: {data.mean()}')
-print(f'STD: {data.std()}')plt.tight_layout(pad=1)
+print(f'STD: {data.std()}')
 print(f'VAR: {data.var()}')
 print(f'MAX: {data.max()}')
 print(f'MIN: {data.min()}')
@@ -93,7 +93,6 @@ print(f'MIN: {data.min()}')
     # ACF plot must be double sided, from negative # of lags to positive # of lags.
     # Highlight insignificant region.
 
-#%%
 ## AUTO-CORRELATION FUNCTION
 def ac_func(series, lag):
     if lag == len(series):
@@ -120,8 +119,8 @@ def acf_df(series, lag):
         acf_value.insert(0, x)
         acf_value.append(x)
     df = pd.DataFrame()
-    df['lags'] = lag_list
-    df['acf'] = acf_value
+    df['LAGS'] = lag_list
+    df['ACF'] = acf_value
     return df
 
 #%%
@@ -134,14 +133,11 @@ def acf_stemplot(col, df, n):
     plt.setp(markers, color='red', marker='o')
     plt.setp(baseline, color='gray', linewidth=2, linestyle='-')
     plt.fill_between(df['LAGS'], (1.96 / np.sqrt(len(df))), (-1.96 / np.sqrt(len(df))), color='magenta', alpha=0.2)
-    plt.show()
+        #m = 1.96 / np.sqrt(len(df))
+        #plt.axhspan(-m, m, alpha=0.2, color='skyblue')
+        #plt.savefig(folder + 'images/' + f'{col}.png', dpi=1000)
+    #plt.show()
 
-    # m = 1.96 / np.sqrt(len(df))
-    # plt.axhspan(-m, m, alpha=0.2, color='skyblue')
-    # plt.savefig(folder + 'images/' + f'{col}.png', dpi=1000)
-
-#%%
-print(acf_df(data, 4))
 
 #%%
 # 3a. Plot the ACF of the make-up dataset in step 1.
@@ -149,7 +145,8 @@ print(acf_df(data, 4))
     # Number of lags = 4.
 
 acf_df_4 = acf_df(data, 4)
-acf_stemplot(acf_df_4.ACF, acf_df_4, 4)
+acf_stemplot(acf_df_4, acf_df_4, 4)
+plt.show()
 
 #%%
 # 3b. Plot the ACF of the generated data in step 2.
@@ -158,6 +155,7 @@ acf_stemplot(acf_df_4.ACF, acf_df_4, 4)
 
 acf_df_20 = acf_df(data, 20)
 acf_stemplot(acf_df_20.ACF, acf_df_20, 20)
+plt.show()
 
 #%% [markdown]
 # 3c. Record observations about ACF plot, histogram, and time plot of generated WN.
@@ -195,7 +193,7 @@ stock_df = web.DataReader(tickers, data_source='yahoo', start=start_date, end=en
 print("\nTICKERS PULLED")
 
 #%%
-print(stock_df)
+print(stock_df.info())
 
 #%%
     # 4a. Plot the “Close” value of the stock for all companies versus time in one graph:
@@ -205,6 +203,46 @@ print(stock_df)
 
 df_Close = pd.DataFrame(stock_df.Close)
 
+plt.figure(figsize=(16,8))
+plt.subplot(2, 3, 1)
+plt.plot(df_Close.AAPL)
+plt.title('AAPL CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 2)
+plt.plot(df_Close.ORCL)
+plt.title('ORCL CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 3)
+plt.plot(df_Close.TSLA)
+plt.title('TSLA CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 4)
+plt.plot(df_Close.IBM)
+plt.title('IBM CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 5)
+plt.plot(df_Close.YELP)
+plt.title('YELP CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 6)
+plt.plot(df_Close.MSFT)
+plt.title('MSFT CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.tight_layout(pad=1)
+plt.show()
+
 
 
 #%%
@@ -212,29 +250,101 @@ df_Close = pd.DataFrame(stock_df.Close)
         # Subplot [3 rows and 2 columns]. Add x-label, y-label, and title to each subplot.
         # Number lags = 50.
 
+acf_df_aapl = acf_df(df_Close.AAPL, 50)
+acf_df_orcl = acf_df(df_Close.ORCL, 50)
+acf_df_tsla = acf_df(df_Close.TSLA, 50)
+acf_df_ibm = acf_df(df_Close.IBM, 50)
+acf_df_yelp = acf_df(df_Close.YELP, 50)
+acf_df_msft = acf_df(df_Close.MSFT, 50)
 
+plt.figure(figsize=(16,8))
+plt.subplot(2, 3, 1)
+acf_stemplot(acf_df_aapl.ACF, acf_df_aapl, 50)
+plt.title('AAPL CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
 
+plt.subplot(2, 3, 2)
+acf_stemplot(acf_df_orcl.ACF, acf_df_orcl, 50)
+plt.title('ORCL CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 3)
+acf_stemplot(acf_df_tsla.ACF, acf_df_tsla, 50)
+plt.title('TSLA CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 4)
+acf_stemplot(acf_df_ibm.ACF, acf_df_ibm, 50)
+plt.title('IBM CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 5)
+acf_stemplot(acf_df_yelp.ACF, acf_df_yelp, 50)
+plt.title('YELP CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.subplot(2, 3, 6)
+acf_stemplot(acf_df_msft.ACF, acf_df_msft, 50)
+plt.title('MSFT CLOSE', fontsize=21)
+plt.xlabel('DATE', fontsize=18)
+plt.ylabel('CLOSING SHARE PRICE ($USD)', fontsize=18)
+
+plt.tight_layout(pad=1)
+plt.show()
 
 #%%
-ac_func(df_Close.MSFT.values, 20)
+aapl_col_index = df_Close.columns[0].upper()
+orcl_col_index = df_Close.columns[1].upper()
+tsla_col_index = df_Close.columns[2].upper()
+ibm_col_index = df_Close.columns[3].upper()
+yelp_col_index = df_Close.columns[4].upper()
+msft_col_index = df_Close.columns[5].upper()
 
 #%%
-msft_col_index = df.columns[5].upper()
+def rolling_mean_var_plots_stocks(df, col):
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10,8))
+    fig.suptitle(f'ROLLING MEAN / VARIANCE OVER TIME - {col}')
+    ax1.plot(df.index, df['ROLLING MEAN'])
+    ax1.set_ylabel('ROLLING MEAN')
+    ax2.plot(df.index, df['ROLLING VARIANCE'])
+    ax2.set_xlabel('DATE')
+    ax2.set_ylabel('ROLLING VARIANCE')
+    #plt.show()
+    return
 
-rolling_mean_var_plots(msft.Close.values, msft)
+#%%
 
+rolling_mean_var_plots_stocks(rolling_mean_var(df_Close.AAPL), aapl_col_index)
+plt.show()
+#%%
+rolling_mean_var_plots_stocks(rolling_mean_var(df_Close.ORCL), orcl_col_index)
+plt.show()
+#%%
+rolling_mean_var_plots_stocks(rolling_mean_var(df_Close.TSLA), tsla_col_index)
+plt.show()
+#%%
+rolling_mean_var_plots_stocks(rolling_mean_var(df_Close.IBM), ibm_col_index)
+plt.show()
+#%%
+rolling_mean_var_plots_stocks(rolling_mean_var(df_Close.YELP), yelp_col_index)
+plt.show()
+#%%
+rolling_mean_var_plots_stocks(rolling_mean_var(df_Close.MSFT), msft_col_index)
+plt.show()
 
 #%%
 # 5. Write down your observations about:
     # Correlation between stationary and non-stationary time series (if there is any)
     # Autocorrelation function
 
+# None of the stocks appear stationary, with many experiencing explosive and oftentimes volatile growth over time.
+# Generally upward trajectory over time for all blue-chip tickers studied herein.
 
 
 #%%
 
-
-#%%
-
-
-#%%

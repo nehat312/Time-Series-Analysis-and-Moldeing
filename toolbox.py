@@ -66,7 +66,7 @@ def rolling_mean_var_plots(df, col_index):
     ax2.plot(df.index, df['ROLLING VARIANCE'])
     ax2.set_xlabel('DATE')
     ax2.set_ylabel('ROLLING VARIANCE')
-    plt.show()
+    #plt.show()
     return
 
 #%%
