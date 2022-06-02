@@ -127,28 +127,9 @@ def adf_kpss_statistic(timeseries):
     stats = [adf, kpss_]
     return stats
 
-#%%
-### PROCESS TIME SERIES - WORK IN PROGRESS
-def process_time_series(y_column, time_column, df):
-    """
-    :param y_column:
-    :param time_column:
-    :param df:
-    :return:
-    """
-    plt.figure(figsize=(8, 4), layout='constrained')
-    plt.plot(time_column, y_column, data=df)
-    plt.title(f'{y_column} by {time_column}')
-    plt.xlabel(f'{time_column}')
-    plt.ylabel(f'{y_column}')
-    plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
-    plt.grid()
-    print(f"{y_column} saved!")
-    return plt.show()
-
 
 #%%
-def difference(dataset, interval): #
+def difference(dataset, interval):
     diff = []
     for i in range(interval, len(dataset)):
         values = dataset[i] - dataset[i-interval]
@@ -156,21 +137,8 @@ def difference(dataset, interval): #
     return diff
 
 #%%
-def ACF_PACF_Plot(y, lags):
-    acf = sm.tsa.stattools.acf(y, nlags=lags)
-    pacf = sm.tsa.stattools.pacf(y, nlags=lags)
-    fig = plt.figure()
-    plt.subplot(211)
-    plt.title('ACF/PACF of the raw data')
-    plot_acf(y, ax=plt.gca(), lags=lags)
-    plt.subplot(212)
-    plot_pacf(y, ax=plt.gca(), lags=lags)
-    fig.tight_layout(pad=3)
-    plt.show()
-    return
-
-#%%
-def acfunc(series, lag):
+## AUTO-CORRELATION FUNCTION
+def ac_func(series, lag):
     if lag == len(series):
         return 0
     if lag == 0:
@@ -185,32 +153,68 @@ def acfunc(series, lag):
     r = numerator / denominator
     return round(r, 3)
 
-
 #%%
+## ACF DATAFRAME FUNCTION
 def acf_df(series, lag):
     lag_list = [x for x in range(-lag, lag + 1, 1)]
     acf_value = [1]
     for l in [x for x in range(1, lag + 1, 1)]:
-        x = acfunc(series, l)
+        x = ac_func(series, l)
         acf_value.insert(0, x)
         acf_value.append(x)
     df = pd.DataFrame()
-    df['lags'] = lag_list
-    df['acf'] = acf_value
+    df['LAGS'] = lag_list
+    df['ACF'] = acf_value
     return df
 
 #%%
-def stem_acf(name, df, n):
-    plt.stem(df['lags'], df['acf'])
-    plt.title(f'ACF plot of {name}')
-    plt.xlabel('lags')
-    plt.ylabel('Autocorrelation value')
-    # markers = 1.96/((len(df)**(1/2)))
-    # plt.setp(markers, color='red',markers='0')
-    # plt.axhspan(-markers,markers,alpha=0.2,color='blue')
-    plt.fill_between(df['lags'], (1.96 / ((n) ** (1 / 2))), ((-1.96) / ((n) ** (1 / 2))), color='thistle')
-    plt.savefig('final-images/' + f'{name}.png', dpi=1000)
+## STEMPLOT FUNCTION
+def acf_stemplot(col, df, n):
+    (markers, stemlines, baseline) = plt.stem(df['LAGS'], df['ACF'], markerfmt='o')
+    plt.title(f'ACF PLOT') # - {col}
+    plt.xlabel('LAGS')
+    plt.ylabel('AUTOCORRELATION VALUE')
+    plt.setp(markers, color='red', marker='o')
+    plt.setp(baseline, color='gray', linewidth=2, linestyle='-')
+    plt.fill_between(df['LAGS'], (1.96 / np.sqrt(len(df))), (-1.96 / np.sqrt(len(df))), color='magenta', alpha=0.2)
+        #m = 1.96 / np.sqrt(len(df))
+        #plt.axhspan(-m, m, alpha=0.2, color='skyblue')
+        #plt.savefig(folder + 'images/' + f'{col}.png', dpi=1000)
+    plt.show()
+
+#%%
+def acf_pacf_plot(y, lags):
+    acf = sm.tsa.stattools.acf(y, nlags=lags)
+    pacf = sm.tsa.stattools.pacf(y, nlags=lags)
+    fig = plt.figure(figsize=(8,8))
+    plt.subplot(211)
+    plt.title('ACF/PACF - RAW DATA')
+    plot_acf(y, ax=plt.gca(), lags=lags)
+    plt.subplot(212)
+    plot_pacf(y, ax=plt.gca(), lags=lags)
+    fig.tight_layout(pad=3)
+    plt.show()
+    return
+
+
+#%%
+
+
+
+#%%
+### PROCESS TIME SERIES - WORK IN PROGRESS
+def process_time_series(y_col, time_col, df):
+    plt.figure(figsize=(8, 4), layout='constrained')
+    plt.plot(time_col, y_col, data=df)
+    plt.title(f'{y_col} by {time_col}')
+    plt.xlabel(f'{time_col}')
+    plt.ylabel(f'{y_col}')
+    plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
+    plt.grid()
+    #print(f"{y_col} SAVED")
     return plt.show()
 
 
 #%%
+
+

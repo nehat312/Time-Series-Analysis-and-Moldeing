@@ -59,6 +59,9 @@ a2 = np.arange(0,lags,1)
 a3 = -a2[::-1]
 x = np.concatenate((a3[:-1], a2))
 
+print(x.shape)
+#%%
+## ACF STEM PLOT
 plt.figure(figsize=(8,8))
 (markers, stemlines, baseline) = plt.stem(x, ryy, markerfmt='o')
 plt.title(f'ACF PLOT')
