@@ -201,15 +201,8 @@ def acf_pacf_plot(y, lags):
 
 
 #%%
-##  ##
-
-
-#%%
-
-
-#%%
 ## ROLLING AVERAGE ##
-def rolling_average_1(series, h=0):
+def rolling_average(series, h=0):
     prediction = []
     length = list(range(1, (len(series) + 1), 1))
     series = np.array(series)
@@ -220,15 +213,13 @@ def rolling_average_1(series, h=0):
         for step in h:
             prediction.append(series.mean())
     else:
-        print('no steps')
-
+        print('NO STEPS')
     return prediction
 
 #%%
 ## ERROR VARIANCE ##
 def error_variance(array_1, array_2):
     return round(np.nanvar(array_2 - array_1), 2)
-
 
 #%%
 ## RESIDUALS / SQUARED ERROR ##
@@ -243,7 +234,7 @@ def error(observation, prediction):
         return residual, squared_error
 
 #%%
-##  ##
+## AVERAGE PREDICTION ##
 def average_prediction(train_series, h_steps):
     prediction = [np.nan]
     average = np.array(train_series).mean()
@@ -252,31 +243,29 @@ def average_prediction(train_series, h_steps):
     forecast = np.full(fill_value=average, shape=(h_steps,))
     return np.array(prediction[:]), np.array(forecast[:-1])
 
-
-
 #%%
-##  ##
+## TRAIN-TEST-PREDICT ##
 def plot_train_test_predict(train_index, train, test_index, test, predict_index, predict, title):
     fig, ax = plt.subplots()
     ax.plot(train_index, train, color='navy')
-    ax.plot(test_index, test, color='red')
+    ax.plot(test_index, test, color='orange')
     ax.plot(predict_index, predict, color='green')
     plt.title(f'{title}')
-    plt.xlabel('Time steps')
-    plt.ylabel('Value of Data')
-    plt.legend(['train', 'test', 'prediction'])
+    plt.xlabel('TIME STEPS')
+    plt.ylabel('VALUE')
+    plt.legend(['TRAIN', 'TEST', 'PREDICTION'])
     return plt.show()
 
 #%%
-##  ##
+## Q-VALUE ##
 def q_value(residuals, lag):
     ACF_df = acf_df(residuals, lag)
     T = len(residuals)
-    squared_acf = np.sum(np.square(ACF_df['acf']))
+    squared_acf = np.sum(np.square(ACF_df['ACF']))
     return T * squared_acf
 
 #%%
-##  ##
+## NAIVE PREDICTION ##
 def naive_prediction(train_series, h_steps):
     train_series = np.array(train_series)
     prediction = []
@@ -286,7 +275,7 @@ def naive_prediction(train_series, h_steps):
     return np.array(prediction), np.array(forecast)
 
 #%%
-##  ##
+## NAIVE ROLLING ##
 def naive_rolling(series, h=0):
     prediction = [np.nan]
     length = list(range(1, (len(series) + 1), 1))
@@ -303,7 +292,7 @@ def naive_rolling(series, h=0):
     return prediction[:-1]
 
 #%%
-##  ##
+## DRIFT ROLLING ##
 def drift_rolling(series, h=0):
     series = np.array(series)
     length = list(range(2, (len(series) + 1), 1))
@@ -322,7 +311,7 @@ def drift_rolling(series, h=0):
     return prediction[:-2]
 
 #%%
-##  ##
+## DRIFT PREDICTION ##
 def drift_prediction(series, h_steps):
     prediction = []
     series = np.array(series)
@@ -331,24 +320,24 @@ def drift_prediction(series, h_steps):
     for h in steps:
         drift = series[-1] + (h * ((series[-1] - series[0]) / (len(series) - 2)))
         prediction.append(drift)
+
     return prediction
 
 #%%
-##  ##
+## SES ROLLING ##
 def ses_rolling(series, extra_periods=1, alpha=0.5):
-    series = np.array(series)  # Transform the input into a numpy array
+    series = np.array(series)  # Transform input into array
     cols = len(series)  # Historical period length
-    series = np.append(series, [np.nan] * extra_periods)  # Append np.nan into the demand array to cover future periods
+    series = np.append(series, [np.nan] * extra_periods)  # Append np.nan into demand array to accept future periods
     f = np.full(cols + extra_periods, np.nan)  # Forecast array
-    f[1] = series[0]  # initialization of first forecast
-    # Create all the t+1 forecasts until end of historical period
-    for t in range(2, cols + 1):
+    f[1] = series[0]  # Initialize first forecast
+    for t in range(2, cols + 1): # Create all t+1 forecasts until end of time series / historical period
         f[t] = alpha * series[t - 1] + (1 - alpha) * f[t - 1]
     f[cols + 1:] = f[t]  # Forecast for all extra periods
     return f[:-extra_periods]
 
 #%%
-##  ##
+## SES PREDICTION ##
 def ses_prediction(series, h_steps=1, alpha=0.5):
     series = np.array(series)  # Transform the input into a numpy array
     cols = len(series)  # Historical period length
@@ -362,55 +351,53 @@ def ses_prediction(series, h_steps=1, alpha=0.5):
     return f[-h_steps:]
 
 #%%
-##  ##
+## MSE - MEAN SQUARED ERROR ##
 def mse_calc(obs_series, pred_series):
     return round((np.sum(np.square(np.subtract(np.array(pred_series), np.array(obs_series))) / len(obs_series))), 2)
 
 #%%
-##  ##
+## RESIDUALS ##
 def residuals(array_1, array_2):
     return array_2 - array_1
 
 #%%
-##  ##
+## LEAST SQUARED ERROR ##
 def lse(x_matrix, y_array):
     invert = np.linalg.inv(np.dot(np.transpose(x_matrix), x_matrix))
     transpose_y_array = np.dot(np.transpose(x_matrix), y_array)
     return np.dot(invert, transpose_y_array)
 
 #%%
-##  ##
+## SCORING METRICS ##
+def aic_bic_rsquared_df(fitted_model):
+    return pd.DataFrame.from_dict(
+        {'INDEX': [0], 'AIC': fitted_model.aic, 'BIC': fitted_model.bic, 'ADJ_R_SQUARED': fitted_model.rsquared_adj})
+
+#%%
+## COEFFICIENTS ## [Multiple Regression Model]
 def coefficients(X, Y):
-    '''The function returns the values of the multiple regression model coefficients'''
     coef = np.dot(np.dot(np.linalg.inv(np.dot(X.transpose(), X)), X.transpose()), Y)
     return coef
 
 #%%
-##  ##
+## WORST FEATURE ##
 def worst_feature(p_value_series):
     return p_value_series.idxmax()
 
 #%%
-##  ##
-def aic_bic_rsquared_df(fitted_model):
-    return pd.DataFrame.from_dict(
-        {'index': [0], 'aic': fitted_model.aic, 'bic': fitted_model.bic, 'adj_rsquared': fitted_model.rsquared_adj})
-
-
-#%%
-##  ##
+## MSE - ERRORS ##
 def mse(errors):
     return np.sum(np.power(errors, 2)) / len(errors)
 
 #%%
-##  ##
+## STRENGTH OF TREND ##
 def strength_of_trend(residual, trend):
     var_resid = np.nanvar(residual)
     var_resid_trend = np.nanvar(np.add(residual, trend))
     return 1 - (var_resid / var_resid_trend)
 
 #%%
-##  ##
+## STRENGTH OF SEASONAL ##
 def strength_of_seasonal(residual, seasonal):
     var_resid = np.nanvar(residual)
     var_resid_seasonal = np.nanvar(np.add(residual, seasonal))
