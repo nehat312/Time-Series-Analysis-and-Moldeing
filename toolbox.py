@@ -287,7 +287,7 @@ def naive_rolling(series, h=0):
         for step in h:
             prediction.append(series[-1])
     else:
-        print('no steps')
+        print('NO STEPS')
 
     return prediction[:-1]
 
@@ -306,7 +306,7 @@ def drift_rolling(series, h=0):
         for step in h:
             prediction.append(prediction[-1])
     else:
-        print('no steps')
+        print('NO STEPS')
 
     return prediction[:-2]
 
