@@ -1,9 +1,9 @@
 #%% [markdown]
-# DATS-6313 - LAB #3
+# DATS-6313 - LAB #2
 # Nate Ehat
 
 #%% [markdown]
-# SIMPLE FORECASTING METHODS
+# TIME SERIES DECOMPOSITION
 
 #%%
 # LIBRARY IMPORTS
@@ -20,232 +20,298 @@ import scipy.stats as st
 
 from toolbox import *
 
-print("\nIMPORT SUCCESS")
-
-#%%
-# import warnings
-# warnings.filterwarnings('ignore')
-
-#%%
-# DIRECTORY CONFIGURATION
-current_folder = '/Users/nehat312/GitHub/Time-Series-Analysis-and-Moldeing/'
-
-#%%
 ## VISUAL SETTINGS
 sns.set_style('whitegrid')
 
-#%%
-# 1. Let suppose a time series dataset is given as below (make-up dataset).
-    # Without a help of Python and using the average forecast method:
-    # Perform one-step ahead prediction and fill out the table.
-    # To perform the correct cross-validation:
-        # start with first observation {y1}
-            # predict the second observation {y2} (can now calculate first error).
-            # Add the next observation {y1, y2}
-            # Predict {y3} (you can now calculate the second error).
-        # Continue this pattern through the dataset.
-    # Then calculate the MSE of the 1-step prediction and MSE of h-step forecast.
-
-#%% [markdown]
-# Refer to attached .xlsx file for manually computed forecasting methods.
+print("\nIMPORT SUCCESS")
 
 #%%
-# 2. Write a python code that perform the task in step 1.
-    # Plot the test set, training set and the h-step forecast in one graph with different marker/color.
-    # Add an appropriate title, legend, x-label, y-label to each graph.
-    # No need to include the 1-step prediction in this graph.
+# VARIABLE DIRECTORY
+current_folder = '/Users/nehat312/GitHub/Time-Series-Analysis-and-Moldeing/'
+passengers_link = 'https://raw.githubusercontent.com/rjafari979/Time-Series-Analysis-and-Moldeing/master/AirPassengers'
 
-dummy_x = [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
-dummy_y = [112, 118, 132, 129, 121, 135, 148, 136, 119, 104, 118, 115, 126, 141]
-
-data = pd.Series(dummy_y, index=dummy_x)
-print(data)
+print("\nDIRECTORY ASSIGNED")
 
 #%%
-## ROLLING AVERAGE ##
-def rolling_average(series, h=0):
-    prediction = []
-    length = list(range(1, (len(series) + 1), 1))
-    series = np.array(series)
-    for index in length:
-        prediction.append(series[:index].mean())
-    # if h > 0:
-    #     h = list(range(1, (h + 1), 1))
-    #     for step in h:
-    #         prediction.append(series.mean())
-    # else:
-    #     print('NO STEPS')
-    return prediction
+# 1. Using the Python program to load the ‘Airpassengers.csv’.
+
+passengers = pd.read_csv(passengers_link + '.csv') # #parse_dates=True, infer_datetime_format=True, parse_dates=['Unnamed: 0']
+print("\nIMPORT SUCCESS")
 
 #%%
-print(rolling_average(data))
+## INITIAL EDA
+print(passengers.info())
+print('*'*100)
+print(passengers.head())
 
 #%%
-# 3. Using python, calculate MSE of prediction errors and forecast errors.
-
-## MSE ##
-def mse_calc(obs_series, pred_series):
-    return round((np.sum(np.square(np.subtract(np.array(pred_series), np.array(obs_series))) / len(obs_series))), 2)
-
-def mse(errors):
-    return np.sum(np.power(errors, 2)) / len(errors)
+passengers['Month'] = pd.to_datetime(passengers['Month'])
+print(passengers.info())
 
 #%%
-# 4. Using python, calculate variance of prediction error and variance of forecast error.
-
-## ERROR VARIANCE ##
-def error_variance(array_1, array_2):
-    return round(np.nanvar(array_2 - array_1), 2)
-
-## RESIDUALS / SQUARED ERROR ##
-def error(observation, prediction):
-    try:
-        residual = np.subtract(np.array(observation), np.array(prediction))
-        squared_error = np.square(residual)
-        return residual, squared_error
-    except:
-        residual = np.subtract(np.array(observation[1:]), np.array(prediction))
-        squared_error = np.square(residual)
-        return residual, squared_error
+## DETERMINE START / END DATES
+print(passengers.Month.min())
+print('*'*50)
+print(passengers.Month.max())
 
 #%%
-# 5. Calculate the Q value for estimate on training set
-    # Display the Q-value on the console.
-    # Number of lags = 5)
+# Then write a python function that implement moving average of order m.
+# The program should be written in a way that when it runs:
+      # it should ask the user to input the order of moving average.
+      # If m is even, then then the software must ask a user to enter the folding order (second MA) which must be even (Hint: You need to exclude the case m=1,2 and display a message that m=1,2 will not be accepted).
+      # If m is odd, no need for the second MA.
+      # Then the code should calculate estimated trend-cycle using the following equation where y is the original observation.
+      # You are only allowed to use NumPy and pandas for this question.
+      # (The use rolling mean inside the pandas is not allowed for this LAB).
 
-## RESIDUALS ##
-def residuals(array_1, array_2):
-    return array_2 - array_1
-
-## Q-VALUE ##
-def q_value(residuals, lag):
-    ACF_df = acf_df(residuals, lag)
-    T = len(residuals)
-    squared_acf = np.sum(np.square(ACF_df['ACF']))
-    return T * squared_acf
-
-#%%
-print(f'AVERAGE METHOD MSE ERRORS: {mse_calc(data, rolling_average(data)):.2f}')
-print(f'AVERAGE METHOD VARIANCE: {error_variance(data, rolling_average(data)):.2f}')
-print(f'AVERAGE METHOD Q-VALUE: {q_value(residuals(data, rolling_average(data)), 5):.2f}')
-
-#%%
-# 6. Repeat step 1 through 5 with the Naïve method.
-
-## NAIVE ROLLING ##
-def naive_rolling(series, h=0):
-    prediction = [np.nan]
-    length = list(range(1, (len(series) + 1), 1))
-    series = np.array(series)
-    for index in length:
-        prediction.append(series[(index - 1)])
-    # if h > 0:
-    #     h = list(range(1, (h + 1), 1))
-    #     for step in h:
-    #         prediction.append(series[-1])
-    # else:
-    #     print('NO STEPS')
-
-    return prediction[:-1]
-
-#%%
-print(naive_rolling(data))
-
-#%%
-print(f'NAIVE METHOD MSE: {mse_calc(data, naive_rolling(data)):.2f}')
-print(f'NAIVE METHOD VARIANCE: {error_variance(data, naive_rolling(data)):.2f}')
-print(f'NAIVE METHOD Q-VALUE: {q_value(residuals(data, rolling_average(data)), 5):.2f}')
-
-#%%
-# 7. Repeat step 1 through 5 with the drift method.
-
-## DRIFT ROLLING ##
-def drift_rolling(series, h=0):
-    series = np.array(series)
-    length = list(range(1, (len(series) + 1), 1))
-    # series = np.append(series, [np.nan] * 1)
-    prediction = [np.nan, np.nan]
-    for index in length:
-        drift = series[index - 1] + (h * ((series[index - 1] - series[0]) / (index - 1)))
-        prediction.append(drift)
-    # if h > 0:
-    #     h = list(range(1, (h + 1), 1))
-    #     for step in h:
-    #         prediction.append(prediction[-1])
-    # else:
-    #     print('NO STEPS')
-    return prediction[:-2]
-
-#%%
-print(drift_rolling(data))
-
-#%%
-print(f'DRIFT METHOD MSE: {mse_calc(data, drift_rolling(data)):.2f}')
-print(f'DRIFT METHOD VARIANCE: {error_variance(data, drift_rolling(data)):.2f}')
-print(f'DRIFT METHOD Q-VALUE: {q_value(residuals(data, drift_rolling(data)), 5):.2f}')
-
-#%%
-# 8. Repeat step 1 through 5 with the simple exponential method.
-      # Consider alpha = 0.5
-      # initial condition = first sample in training set
-
-## SES ROLLING ##
-def ses_rolling(series, extra_periods=1, alpha=0.5):
-    series = np.array(series)  # Transform input into array
-    cols = len(series)  # Historical period length
-    series = np.append(series, [np.nan] * extra_periods)  # Append np.nan into demand array to accept future periods
-    f = np.full(cols + extra_periods, np.nan)  # Forecast array
-    f[1] = series[0]  # Initialize first forecast
-    for t in range(2, cols + 1): # Create all t+1 forecasts until end of time series / historical period
-        f[t] = alpha * series[t - 1] + (1 - alpha) * f[t - 1]
-    f[cols + 1:] = f[t]  # Forecast for all extra periods
-    return f[:-extra_periods]
-
-#%%
-print(ses_rolling(data))
-
-#%%
-print(f'SES METHOD MSE: {mse_calc(data, ses_rolling(data)):.2f}')
-print(f'SES METHOD VARIANCE: {error_variance(data, ses_rolling(data)):.2f}')
-print(f'SES METHOD Q-VALUE: {q_value(residuals(data, ses_rolling(data)), 5):.2f}')
-
-#%%
-# 9. Using SES method:
-      # Plot the test set, training set, h-step forecast in one graph for:
-      # Alpha = 0, 0.25, 0.75 and 0.99.
-      # You can use a subplot 2x2.
-      # Add an appropriate title, legend, x-label, y-label to each graph.
-      # No need to include the 1-step prediction in this graph.
-
+def rolling_avg_non_wtd(array, m): # n > 2
+    m = int(m)
+    odd = True if m % 2 == 1 else False
+    if m <= 2:
+        return print("ERROR: M MUST BE > 2")
+    elif odd == True:
+        start = np.array([np.nan] * int((m - 1) / 2))
+        average = np.array(np.lib.stride_tricks.sliding_window_view(array, m).mean(axis=1))
+        end = np.array([np.nan] * int((m - 1) / 2))
+        full = np.append(np.append(start, average), end)
+        return full
+    else:
+        start = np.array([np.nan] * int(m / 2))
+        average = np.array(np.lib.stride_tricks.sliding_window_view(array, m).mean(axis=1))
+        end = np.array(([np.nan] * int((m - 1) / 2)))
+        full = np.append(np.append(start, average), end)
+        return full
 
 
 #%%
-# 10. Create a table and compare the four forecast method above by displaying:
-      # Q values
-      # MSE
-      # Mean
-      # Number of prediction errors
-      # Variance of prediction errors
+rolling_avg_non_wtd(passengers['#Passengers'], 9)
 
-forecast_table = pd.DataFrame()
+#%%
+
+# 2. Using the function developed in the previous step plot:
+      # Estimated cycle-trend versus the original dataset (plot only the first 50 samples) for:
+            # 3-MA, 5-MA, 7-MA, 9-MA
+            # All in one graph (use the subplot 2x2).
+            # Plot the detrended data on the same graph.
+            # Add an appropriate title, x-label, y-label, and legend to the graph.
+
+for i in range(0,9):
+rolling_avg_non_wtd(passengers['#Passengers'], 9)
 
 
 #%%
-# 11. Using the python program developed in the previous LAB,
-      # Plot the ACF of prediction errors.
 
+# 3. Using the function developed in the step 1 plot:
+      # Estimated cycle-trend versus the original dataset -- # Plot only the first 50 samples
+            # 2x4-MA, 2x6-MA, 2x8-MA, and 2x10-MA
+            # All in one graph (use the subplot 2x2).
+            # Plot the detrended data on the same graph.
+            # Add an appropriate title, x-label, y-label, and legend to the graph.
 
 
 #%%
-# 12. Compare the above 4 methods by looking at:
-      # Variance of prediction error versus the variance
-      # Number of forecast error and pick the best estimator.
+
+# 4. Compare the ADF-test of the original dataset versus the detrended dataset using the 3-MA.
+      # Explain your observation.
+
+
+#%%
+
+# 5.  Apply the STL decomposition method to the dataset.
+      # Plot the trend, seasonality, and reminder in one graph.
+      # Add an appropriate title, x-label, y-label, and legend to the graph.
+
+#%%
+# 6. Calculate the seasonally adjusted data and plot it versus the original data.
+      # Add an appropriate title, x- label, y-label, and legend to the graph.
+
+#%%
+# 7- Calculate the strength of trend using the following equation and display the following message on the console:
+      # The strength of trend for this data set is ________
+
+#%%
+# 8-Calculate the strength of seasonality using the following equation and display the following message on the console:
+      # The strength of seasonality for this data set is ________
+
+#%%
+# 9- Based on the results in the previous steps - is this data set strongly seasonal or strongly trended?
       # Justify your answer.
 
 
+#%%
+# PLOT
+#fig, axes = plt.subplots(1,1,figsize=(10,8))
+#passengers['#Passengers'].plot(legend=True)
 
-#%% [markdown]
+plt.figure(figsize=(10,8))
+sns.lineplot(x=passengers['Month'], y=passengers['#Passengers'])
+plt.title("AIR PASSENGERS (1949-1960)")
+plt.xlabel('DATE')
+plt.ylabel('PASSENGERS (#)')
+plt.tight_layout(pad=1)
+#plt.grid()
+plt.show()
+
+#%%
+# TIME SERIES STATISTICS
+print("#Passengers mean is:", passengers['#Passengers'].mean(),
+      "and the variance is:", passengers['#Passengers'].var(),
+      "with standard deviation:", passengers['#Passengers'].std())
+print('*'*150)
+
+#%%
+# SET COLUMN INDICES FOR CHART TITLES
+passengers_col_index = passengers.columns[1].upper()
+print(passengers_col_index)
+
+#%%
+rolling_mean_var_plots(rolling_mean_var(passengers['#Passengers']), passengers_col_index)
+
+#%%
+## ADF TEST
+print('ADF PASSENGERS:')
+print(adf_test(['#Passengers'], passengers))
+print('*'*100)
+
+#%%
+## KPSS TEST
+print('KPSS PASSENGERS:')
+print(kpss_test(passengers['#Passengers']))
+print('*'*100)
+
+#%%
+# 8.
+# If the passengers is not stationary, it needs to become stationary by transformation
+# a. Perform a 1st order non-seasonal differencing.
+    # Is the dataset become stationary? Explain why.
+# b. Perform a 2nd order non-seasonal differencing.
+    # Is the dataset become stationary? Explain why.
+# c. Perform a 3rd order non-seasonal differencing.
+    # Is the dataset become stationary? Explain why.
+# d. If procedures a, b and c do not make the dataset stationary:
+    # Perform a log transformation of the original raw dataset followed by a 1st order differencing
+    # Plot the rolling mean and variance.
+    # Perform ADF-test and KPSS-test on the transformed dataset and display the results on the console.
+        # This step should make the dataset stationary
+        # rolling mean and variance is stabilize and the ADF-test confirms stationarity.
+
+#%%
+## FIRST-ORDER DIFFERENCING
+passengers_1diff = differencer(passengers['#Passengers'], 1, passengers['Month'])
+print(passengers_1diff)
+
+#%%
+## FIRST-ORDER DIFFERENCING - SET COLUMN INDICES FOR CHART TITLES
+passengers_1diff_col_index = passengers_1diff.columns[0].upper()
+print(passengers_1diff_col_index)
+
+#%%
+## FIRST-ORDER DIFFERENCING - GENERATE PLOTS
+rolling_mean_var_plots(rolling_mean_var(passengers_1diff), passengers_1diff_col_index)
+
+#%%
+print(passengers_1diff.columns)
+
+#%%
+## FIRST-ORDER DIFFERENCING - ADF TEST
+print('ADF FIRST-ORDER DIFF:')
+print(adf_test(['1diff'], passengers_1diff))
+print('*'*100)
+
+#%%
+## FIRST-ORDER DIFFERENCING - KPSS TEST
+print('KPSS FIRST-ORDER DIFF:')
+print(kpss_test(passengers_1diff['1diff']))
+print('*'*100)
+
+#%%
+## SECOND-ORDER DIFFERENCING
+passengers_2diff = differencer(passengers_1diff['1diff'], 2, passengers_1diff.index)
+print(passengers_2diff)
+
+#%%
+## SECOND-ORDER DIFFERENCING - SET COLUMN INDICES FOR CHART TITLES
+passengers_2diff_col_index = passengers_2diff.columns[0].upper()
+print(passengers_2diff_col_index)
+
+#%%
+## SECOND-ORDER DIFFERENCING - GENERATE PLOTS
+rolling_mean_var_plots(rolling_mean_var(passengers_2diff), passengers_2diff_col_index)
+
+#%%
+## SECOND-ORDER DIFFERENCING - ADF TEST
+print('ADF SECOND-ORDER DIFF:')
+print(adf_test(['2diff'], passengers_2diff))
+print('*'*100)
+
+#%%
+## SECOND-ORDER DIFFERENCING - KPSS TEST
+print('KPSS SECOND-ORDER DIFF:')
+print(kpss_test(passengers_2diff['2diff']))
+print('*'*100)
+
+#%%
+## THIRD-ORDER DIFFERENCING
+passengers_3diff = differencer(passengers_2diff['2diff'], 3, passengers_2diff.index)
+print(passengers_3diff)
+
+#%%
+## THIRD-ORDER DIFFERENCING - SET COLUMN INDICES FOR CHART TITLES
+passengers_3diff_col_index = passengers_3diff.columns[0].upper()
+print(passengers_3diff_col_index)
+
+#%%
+## THIRD-ORDER DIFFERENCING - GENERATE PLOTS
+rolling_mean_var_plots(rolling_mean_var(passengers_3diff), passengers_3diff_col_index)
+
+#%%
+## THIRD-ORDER DIFFERENCING - ADF TEST
+print('ADF THIRD-ORDER DIFF:')
+print(adf_test(['3diff'], passengers_3diff))
+print('*'*100)
+
+#%%
+## THIRD-ORDER DIFFERENCING - KPSS TEST
+print('KPSS THIRD-ORDER DIFF:')
+print(kpss_test(passengers_3diff['3diff']))
+print('*'*100)
+
+#%%
+## LOG TRANSFORMATION
+passengers_log = log_transform(passengers['#Passengers'], passengers.index)
+print(passengers_log)
+
+#%%
+## LOG TRANSFORMATION - SET COLUMN INDICES FOR CHART TITLES
+passengers_log_col_index = passengers_log.columns[0].upper()
+print(passengers_log_col_index)
+print(passengers_log.columns)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING
+passengers_log_1diff = differencer(passengers_log['log_transform'], 1, passengers_log.index)
+print(passengers_log_1diff)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING - SET COLUMN INDICES FOR CHART TITLES
+passengers_log_1diff_col_index = passengers_log_1diff.columns[0].upper()
+print(passengers_log_1diff_col_index)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING - GENERATE PLOTS
+rolling_mean_var_plots(rolling_mean_var(passengers_log_1diff), passengers_log_1diff_col_index)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING - ADF TEST
+print('ADF LOG FIRST-ORDER DIFF:')
+print(adf_test(['1diff'], passengers_log_1diff))
+print('*'*100)
+
+#%%
+## LOG FIRST-ORDER DIFFERENCING - KPSS TEST
+print('KPSS LOG FIRST-ORDER DIFF:')
+print(kpss_test(passengers_log_1diff['1diff']))
+print('*'*100)
 
 
 #%%
-
