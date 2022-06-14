@@ -408,19 +408,6 @@ def rolling_avg_non_wtd(array, m): # n > 2
         end = np.array(([np.nan] * int((m - 1) / 2)))
         full = np.append(np.append(start, average), end)
         return full
-#%%
-## STRENGTH OF TREND ##
-def strength_of_trend(residual, trend):
-    var_resid = np.nanvar(residual)
-    var_resid_trend = np.nanvar(np.add(residual, trend))
-    return 1 - (var_resid / var_resid_trend)
-
-#%%
-## STRENGTH OF SEASONAL ##
-def strength_of_seasonal(residual, seasonal):
-    var_resid = np.nanvar(residual)
-    var_resid_seasonal = np.nanvar(np.add(residual, seasonal))
-    return 1 - (var_resid / var_resid_seasonal)
 
 #%%
 ## ODD ROLLING AVERAGE ##
@@ -428,8 +415,8 @@ def odd_rolling_avg(array, m):
     start = np.array([np.nan] * int((m - 1) / 2))
     average = np.array(np.lib.stride_tricks.sliding_window_view(array, m).mean(axis=1))
     end = np.array([np.nan] * int((m - 1) / 2))
-    full = np.append(np.append(start, average), end)
-    return full
+    final = np.append(np.append(start, average), end)
+    return final
 
 #%%
 ## EVEN ROLLING AVERAGE ##
@@ -437,8 +424,8 @@ def even_rolling_avg(array, m):
     start = np.array([np.nan] * int(m / 2))
     average = np.array(np.lib.stride_tricks.sliding_window_view(array, m).mean(axis=1))
     end = np.array(([np.nan] * int((m - 1) / 2)))
-    full = np.append(np.append(start, average), end)
-    return full
+    final = np.append(np.append(start, average), end)
+    return final
 
 #%%
 ## ODD OR EVEN ROLLING AVERAGE ##
@@ -457,6 +444,22 @@ def odd_or_even_rolling_avg(array):
             return output
     elif order_1 % 2 == 1:
         return odd_rolling_avg(array, order_1)
+
+
+
+#%%
+## STRENGTH OF TREND ##
+def strength_of_trend(residual, trend):
+    var_resid = np.nanvar(residual)
+    var_resid_trend = np.nanvar(np.add(residual, trend))
+    return 1 - (var_resid / var_resid_trend)
+
+#%%
+## STRENGTH OF SEASONAL ##
+def strength_of_seasonal(residual, seasonal):
+    var_resid = np.nanvar(residual)
+    var_resid_seasonal = np.nanvar(np.add(residual, seasonal))
+    return 1 - (var_resid / var_resid_seasonal)
 
 
 #%%
