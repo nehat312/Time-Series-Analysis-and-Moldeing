@@ -19,23 +19,26 @@ import datetime as dt
 import scipy.stats as st
 
 from toolbox import *
-
-## VISUAL SETTINGS
-sns.set_style('whitegrid')
+from sklearn.model_selection import train_test_split
+import statsmodels.tsa.holtwinters as ets
 
 print("\nIMPORT SUCCESS")
 
 #%%
-# VARIABLE DIRECTORY
+## VISUAL SETTINGS
+sns.set_style('whitegrid')
+
+#%%
+# DIRECTORY CONFIGURATION
 current_folder = '/Users/nehat312/GitHub/Time-Series-Analysis-and-Moldeing/'
-passengers_link = 'https://raw.githubusercontent.com/rjafari979/Time-Series-Analysis-and-Moldeing/master/AirPassengers'
 
 print("\nDIRECTORY ASSIGNED")
 
 #%%
 # 1. Using the Python program to load the ‘Airpassengers.csv’.
+passengers_link = 'https://raw.githubusercontent.com/rjafari979/Time-Series-Analysis-and-Moldeing/master/AirPassengers'
 
-passengers = pd.read_csv(passengers_link + '.csv') # #parse_dates=True, infer_datetime_format=True, parse_dates=['Unnamed: 0']
+passengers = pd.read_csv(passengers_link + '.csv', index_col='Month', parse_dates=True) # #parse_dates=True, infer_datetime_format=True, parse_dates=['Unnamed: 0']
 print("\nIMPORT SUCCESS")
 
 #%%
@@ -55,14 +58,19 @@ print('*'*50)
 print(passengers.Month.max())
 
 #%%
-# Then write a python function that implement moving average of order m.
+# Write a python function that implement moving average of order m.
 # The program should be written in a way that when it runs:
       # it should ask the user to input the order of moving average.
-      # If m is even, then then the software must ask a user to enter the folding order (second MA) which must be even (Hint: You need to exclude the case m=1,2 and display a message that m=1,2 will not be accepted).
+      # If m is even, then then the software must ask a user to enter the folding order (second MA)
+        # which must be even (Hint: You need to exclude the case m=1,2 and display a message that m=1,2 will not be accepted).
       # If m is odd, no need for the second MA.
       # Then the code should calculate estimated trend-cycle using the following equation where y is the original observation.
       # You are only allowed to use NumPy and pandas for this question.
+
       # (The use rolling mean inside the pandas is not allowed for this LAB).
+
+
+
 
 def rolling_avg_non_wtd(array, m): # n > 2
     m = int(m)
@@ -88,15 +96,42 @@ rolling_avg_non_wtd(passengers['#Passengers'], 9)
 
 #%%
 
+
+#%%
 # 2. Using the function developed in the previous step plot:
       # Estimated cycle-trend versus the original dataset (plot only the first 50 samples) for:
             # 3-MA, 5-MA, 7-MA, 9-MA
             # All in one graph (use the subplot 2x2).
             # Plot the detrended data on the same graph.
             # Add an appropriate title, x-label, y-label, and legend to the graph.
+plt.subplot
+for i in range(3,10,2):
+    plt.figure(figsize=(12,8))
+    fig.suptitle('3-MA / 5-MA / 7-MA / 9-MA')
+    # fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    plt.subplot(2,2,1)
+    sns.lineplot(x=passengers.index, y=rolling_avg_non_wtd(passengers['#Passengers'], 3))
+    plt.subplot(2, 2, 2)
+    sns.lineplot(x=passengers.index, y=rolling_avg_non_wtd(passengers['#Passengers'], 5))
+    plt.subplot(2, 2, 3)
+    sns.lineplot(x=passengers.index, y=rolling_avg_non_wtd(passengers['#Passengers'], 7))
+    plt.subplot(2, 2, 4)
+    sns.lineplot(x=passengers.index, y=rolling_avg_non_wtd(passengers['#Passengers'], 9))
 
-for i in range(0,9):
-rolling_avg_non_wtd(passengers['#Passengers'], 9)
+    plt.show()
+
+#%%
+
+fig, axes = plt.subplots(1,1,figsize=(10,8))
+
+plt.figure(figsize=(10,8))
+sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
+plt.title("AIR PASSENGERS (1949-1960)")
+plt.xlabel('DATE')
+plt.ylabel('PASSENGERS (#)')
+plt.tight_layout(pad=1)
+#plt.grid()
+plt.show()
 
 
 #%%
@@ -107,6 +142,30 @@ rolling_avg_non_wtd(passengers['#Passengers'], 9)
             # All in one graph (use the subplot 2x2).
             # Plot the detrended data on the same graph.
             # Add an appropriate title, x-label, y-label, and legend to the graph.
+
+
+
+
+#%%
+# T-T/S
+yt, yf = train_test_split(y, shuffle=False, test_size=0.2)
+
+
+#%%
+holtt = ets.ExponentialSmoothing(yt,
+                                trend=None,
+                                seasonal=None,
+                                damped_trend=False).fit()
+
+holtf = holtt.forecast(steps=len(yf))
+holtf = pd.DataFrame(holtf).set_index(yf.index)
+
+fig, ax = plt.subplots()
+ax.plot(yt, label='TRAIN DATA')
+ax.plot(yf, label='TEST DATA')
+ax.plot(holtf, label='SES METHOD PREDICTION')
+plt.legend(loc='best')
+plt.show()
 
 
 #%%
@@ -312,6 +371,34 @@ print('*'*100)
 print('KPSS LOG FIRST-ORDER DIFF:')
 print(kpss_test(passengers_log_1diff['1diff']))
 print('*'*100)
+
+
+#%%
+
+#%%
+y = passengers['#Passengers']
+lags = 40
+ACF_PACF_Plot(y, lags)
+
+#%%
+### SCRATCH
+fig, axs = plt.subplots(2, 2)
+axs[0, 0].plot(x, y)
+axs[0, 0].set_title('Axis [0, 0]')
+axs[0, 1].plot(x, y, 'tab:orange')
+axs[0, 1].set_title('Axis [0, 1]')
+axs[1, 0].plot(x, -y, 'tab:green')
+axs[1, 0].set_title('Axis [1, 0]')
+axs[1, 1].plot(x, -y, 'tab:red')
+axs[1, 1].set_title('Axis [1, 1]')
+
+for ax in axs.flat:
+    ax.set(xlabel='x-label', ylabel='y-label')
+
+# Hide x labels and tick labels for top plots and y ticks for right plots.
+for ax in axs.flat:
+    ax.label_outer()
+
 
 
 #%%
