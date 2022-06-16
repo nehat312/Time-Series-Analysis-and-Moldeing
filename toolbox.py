@@ -411,25 +411,23 @@ def rolling_avg_non_wtd(array, m): # n > 2
 
 #%%
 ## ODD ROLLING AVERAGE ##
-def odd_rolling_avg(array, m):
+def rolling_avg_odd(array, m):
     start = np.array([np.nan] * int((m - 1) / 2))
     average = np.array(np.lib.stride_tricks.sliding_window_view(array, m).mean(axis=1))
     end = np.array([np.nan] * int((m - 1) / 2))
     final = np.append(np.append(start, average), end)
     return final
 
-#%%
 ## EVEN ROLLING AVERAGE ##
-def even_rolling_avg(array, m):
+def rolling_avg_even(array, m):
     start = np.array([np.nan] * int(m / 2))
     average = np.array(np.lib.stride_tricks.sliding_window_view(array, m).mean(axis=1))
     end = np.array(([np.nan] * int((m - 1) / 2)))
     final = np.append(np.append(start, average), end)
     return final
 
-#%%
 ## ODD OR EVEN ROLLING AVERAGE ##
-def odd_or_even_rolling_avg(array):
+def rolling_avg_odd_or_even(array):
     length = len(array)
     order_1 = int(input("INPUT ORDER OF MOVING AVERAGE:"))
     if order_1 <= 2:
@@ -440,10 +438,44 @@ def odd_or_even_rolling_avg(array):
             print('INVALID FOLDING ORDER')
             pass
         else:
-            output = even_rolling_avg(even_rolling_avg(array, order_1), order_2)
+            output = rolling_avg_even(rolling_avg_even(array, order_1), order_2)
             return output
     elif order_1 % 2 == 1:
-        return odd_rolling_avg(array, order_1)
+        return rolling_avg_odd(array, order_1)
+
+#%%
+## MOVING AVERAGE ##
+def MA_simulation(T):
+    np.random.seed(42)
+    s = np.random.normal(0, 1, size=T)
+    y = np.zeros(len(s))
+    for i in range(len(s)):
+        if i == 0:
+            y[0] = s[0]
+        elif i == 1:
+            y[1] = s[1] + (0.5 * s[0])
+        else:
+            y[i] = s[i] + (0.5 * s[i - 1]) + (0.2 * s[i - 2])
+    return y
+
+
+#%%
+## AUTO-REGRESSION ##
+def AR_simulation(mean, std, T):
+    np.random.seed(42)
+    s = np.random.normal(mean, std, size=T)
+    y = np.zeros(len(s))
+
+    for i in range(len(s)):
+        if i == 0:
+            y[0] = s[0]
+        elif i == 1:
+            y[1] = s[1] + (0.5 * y[0])
+        else:
+            y[i] = s[i] + (0.5 * y[i - 1]) + (0.2 * y[i - 2])
+    return y
+
+
 
 
 
