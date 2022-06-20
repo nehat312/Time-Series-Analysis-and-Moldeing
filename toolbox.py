@@ -511,6 +511,142 @@ def process_time_series(y_col, time_col, df):
     #print(f"{y_col} SAVED")
     return plt.show()
 
+#%%
+
+def ACF_PACF_Plot(y, lags):
+    acf = sm.tsa.stattools.acf(y, nlags=lags)
+    pacf = sm.tsa.stattools.pacf(y, nlags=lags)
+    fig = plt.figure()
+    plt.subplot(211)
+    plt.title('ACF/PACF of the raw data')
+    plot_acf(y, ax=plt.gca(), lags=lags)
+    plt.subplot(212)
+    plot_pacf(y, ax=plt.gca(), lags=lags)
+    fig.tight_layout(pad=3)
+    plt.show()
+    return
+
+#%%
+def arma_input_process_and_sample():
+    samples = int(input('ENTER NUMBER OF SAMPLES'))
+    mean_wn = int(input('ENTER MEAN OF WHITE NOISE'))
+    var_wn = int(input('Enter variance of white noise'))
+    ar_order = int(input('Enter AR order'))
+    ma_order = int(input('Enter MA order'))
+    ar_coeff = []
+    [ar_coeff.append(int(input(f'Enter #{x} AR coefficient, hint: range is (0,1)'))) for x in ar_order]
+    ma_coeff = []
+    [ma_coeff.append(int(input(f'Enter #{x} MA coefficient, hint: range is (0,1)'))) for x in ma_order]
+    arparams = np.array(ar_coeff * (-1))
+    maparams = np.array(ma_coeff)
+    ar = np.insert(arparams, 1)
+    ma = np.insert(maparams, 1)
+    arma_process = sm.tsa.ArmaProcess(ar, ma)
+    arma_sample = np.array(arma_process.generate_sample(nsample=samples, scale=var_wn)) + mean_wn
+    return arma_process, arma_sample
+
+#%%
+## ARMA PROCESS ##
+def arma_process(ar_param, ma_param, samples):
+    np.random.seed(2)
+    arparams = np.array(ar_param)
+    maparams = np.array(ma_param)
+    # print(arparams)
+    # print(maparams)
+    # ar = np.insert(arparams,0,[1])
+    # ma = np.insert(maparams,0,[1])
+    ar = np.r_[1, -arparams]
+    ma = np.r_[1, maparams]
+    arma_process = sm.tsa.ArmaProcess(ar, ma, nobs=samples)
+    return arma_process
+
+#%%
+## GPAC MATRIX ##
+def gpac_matrix(ry, j, k):
+    # generates left most column
+    col = []
+    for i in range(j):
+        col.append(ry[i + 1] / ry[i])
+    table = pd.DataFrame(col, index=np.arange(0, j).tolist()) # convert values to dataframe - rows equal to [0,j)
+    # list for values in the GPAC matrix
+    # this list compiles the various pacf values
+    val = []
+    # for K in GPAC, you do not want to include column 1 as it will all be 1's
+    # first loop goes through the (k,k) matrices
+    for a in range(2, k + 1):
+        # second loop goes through the (k,k) matrices as j increases
+        for f in range(j):  # f is j
+            b_val = []  # numerator
+            t_val = []  # denominator
+            for d in range(a):  #
+                den = []
+                for h in range(a):
+                    den.append(ry[abs(f - h + d)])
+                b_val.append(den.copy())
+                t_val.append(den.copy())
+            mes = a
+            for l in range(a):
+                t_val[l][mes - 1] = ry[l + 1 + f]
+
+            pac = np.linalg.det(t_val) / np.linalg.det(b_val)
+            val.append(pac)
+    # reshape the GPAC value so there is no 0 row in k
+    GPAC = np.array(val).reshape(k - 1, j)
+    # correctly transpose the data
+    GPAC_T = pd.DataFrame(GPAC.T)
+    GPAC_F = pd.concat([table, GPAC_T], axis=1)
+    GPAC_F.columns = list(range(1, k + 1))
+    return GPAC_F
+
+#%%
+## GPAC PLOT##
+def gpac_plot(gpac_df):
+    plt.figure()
+    sns.heatmap(gpac_df, annot=True)
+    plt.title('GPAC TABLE')
+    plt.xlabel('K VALUES')
+    plt.ylabel('J VALUES')
+    plt.show()
+
+#%%
+## GPAC FROM ARMA ##
+def gpac_with_input():
+    samples = int(input('Enter the number of samples'))
+    mean_wn = int(input('Enter mean of white noise'))
+    var_wn = int(input('Enter variance of white noise'))
+    ar_order = int(input('Enter AR order'))
+    ma_order = int(input('Enter MA order'))
+    ar_coeff = []
+    [ar_coeff.append(int(input(f'Enter #{x} AR coefficient, hint: range is (0,1)'))) for x in ar_order]
+    ma_coeff = []
+    [ma_coeff.append(int(input(f'Enter #{x} MA coefficient, hint: range is (0,1)'))) for x in ma_order]
+    arparams = np.array(ar_coeff * (-1))
+    maparams = np.array(ma_coeff)
+    ar = np.insert(arparams, 1)
+    ma = np.insert(maparams, 1)
+    arma_process = sm.tsa.ArmaProcess(ar, ma)
+    arma_sample = np.array(arma_process.generate_sample(nsample=samples, scale=var_wn)) + mean_wn
+    k = input("What K?")
+    j = input("What J?")
+    lags = input("What lags?")
+    arma_acf = arma_process.acf(lags=lags)
+    gpac_df = gpac_matrix(arma_acf, k, j)
+    gpac_plot(gpac_df)
+    return
+
+#%%
+## GPAC FROM ARMA ##
+def gpac_from_arma_process(ar, ma, lags, samples, k, j):
+    process = arma_process(ar, ma, samples)
+    y = process.generate_sample(nsample=samples)
+    ry = process.acf(lags=lags)
+    gpac_df = gpac_matrix(ry, k, j)
+    gpac_plot(gpac_df)
+    ACF_PACF_Plot(y, lags)
+    return gpac_df
+
+
+
 
 #%%
 

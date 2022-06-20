@@ -5,6 +5,11 @@
 #%% [markdown]
 # GPAC TABLE IMPLEMENTATION
 
+# The main purpose of this LAB is to implement the GPAC array covered in lecture using Python program
+# Test the accuracy of your code using an ARMA(na,nb) model.
+# It is permitted to simulate the ARMA process using the statsmodels.
+# Everyone needs to write their own GPAC code that generates GPAC table for various numbers of rows and columns.
+
 #%%
 # LIBRARY IMPORTS
 import numpy as np
@@ -44,287 +49,215 @@ passengers = pd.read_csv(passengers_link + '.csv', index_col='Month', parse_date
 print("\nIMPORT SUCCESS")
 
 #%%
-## INITIAL EDA
-print(passengers.info())
-print('*'*100)
-print(passengers.head())
 
-#%%
-## DETERMINE START / END DATES
-print(f'START DATE: {passengers.index.min()}')
-print('*'*50)
-print(f'END DATE: {passengers.index.max()}')
+# 1. Develop a python code that generates ARMA (na,nb) process. The program should be written in a way that askes a user to enter the following information. Hint: Use statsemodels library.
+    # a. Enter the number of data samples: ______________
+    # b. Enter the mean of white noise: _____________
+    # c. Enter the variance of the white noise: _____________
+    # d. Enter AR order: ______________
+    # e. Enter MA order: _____________
+    # f. Enter the coefficients of AR (you need to include a hint how this should be entered):____
+    # g. Enter the coefficients of MA (you need to include a hint how this should be entered):____
 
-#%%
-# Write a python function that implement moving average of order m.
-# The program should be written in a way that when it runs:
-      # it should ask the user to input the order of moving average.
-      # If m is even, then then the software must ask a user to enter the folding order (second MA)
-        # which must be even (Hint: You need to exclude the case m=1,2 and display a message that m=1,2 will not be accepted).
-      # If m is odd, no need for the second MA.
-      # Then the code should calculate estimated trend-cycle using the following equation where y is the original observation.
-      # You are only allowed to use NumPy and pandas for this question.
-      # (The use rolling mean inside the pandas is not allowed for this LAB).
+
 
 
 #%%
-## MOVING AVERAGE FUNCTION #1
-def moving_average(data, m1, m2):
-    ma = np.empty(len(data))
-    ma[:] = np.NaN
-    if m1 < 2:
-        print('INVALID ORDER')
-    elif m1 % 2 != 0:
-        k = m1 // 2
-        for i in range(k, len(data) - k):
-            ma[i] = np.mean(data[i - k:i + k + 1])
-    else:
-        if m2 % 2 == 1 or m2 < 2:
-            print('INVALID FOLDING ORDER')
-        else:
-            k1 = m1 // 2
-            ma_mid = np.empty(len(data))
-            ma_mid[:] = np.NaN
-            for i in range(k1 - 1, len(data) - k1):
-                ma_mid[i] = np.mean(data[i - k1 + 1:i + k1 + 1])
-            k2 = m2 // 2
-            for i in range(k2 - 1, len(ma_mid) - k2):
-                ma[i + 1] = np.mean(ma_mid[i - k2 + 1:i + k2 + 1])
-    return ma
+# 2.
+
+# Edit the python code in step 1 that implement the GPAC table using the following equation.
+# The output should be the GPAC table.
 
 #%%
-## MOVING AVERAGE FUNCTION #2
+# 3.
 
-def rolling_avg_odd(array, m):
-    start = np.array([np.nan] * int((m - 1) / 2))
-    average = np.array(np.lib.stride_tricks.sliding_window_view(array, m).mean(axis=1))
-    end = np.array([np.nan] * int((m - 1) / 2))
-    final = np.append(np.append(start, average), end)
-    return final
-
-def rolling_avg_even(array, m):
-    start = np.array([np.nan] * int(m / 2))
-    average = np.array(np.lib.stride_tricks.sliding_window_view(array, m).mean(axis=1))
-    end = np.array(([np.nan] * int((m - 1) / 2)))
-    final = np.append(np.append(start, average), end)
-    return final
-
-def rolling_avg_odd_or_even(array):
-    length = len(array)
-    order_1 = int(input("INPUT ORDER OF MOVING AVERAGE:"))
-    if order_1 <= 2:
-        return print('ERROR: ORDER MUST BE >2')
-    elif order_1 % 2 == 0:
-        order_2 = int(input('ERROR: FOLDING ORDER MUST BE EVEN / >1'))
-        if order_2 < 2 or order_2 % 2 != 0:
-            print('INVALID FOLDING ORDER')
-            pass
-        else:
-            output = rolling_avg_even(rolling_avg_even(array, order_1), order_2)
-            return output
-    elif order_1 % 2 == 1:
-        return rolling_avg_odd(array, order_1)
+# Using the developed code above, simulate ARMA(1,0) for 1000 samples as follows:
+    # 𝑦(𝑡) − 0.5𝑦(𝑡 − 1) = 𝑒(𝑡)
+        # e(t) is WN(1,2).
+    # Use statsemodels library to simulate above ARMA (1,0) process.
+    # You can use the .generate_sample (# of samples, scales = std of WN noise) + mean (y)
+        # mean(y) = μ𝑒(1+∑ 𝑏𝑖) 1+∑ 𝑎𝑖
 
 #%%
-# 2. Using the function developed in the previous step plot:
-      # Estimated cycle-trend versus the original dataset (plot only the first 50 samples) for:
-            # 3-MA, 5-MA, 7-MA, 9-MA
-            # All in one graph (use the subplot 2x2).
-            # Add an appropriate title, x-label, y-label, and legend to the graph.
-            # Plot the detrended data on the same graph.
+# 4.
+# Using python program, find the theoretical ACF for y(t) with lags = 15.
+# Hint: You can use the following function:
+    # arma_process.acf(lags=lags)
 
-#for i in range(3,10,2):
-plt.figure(figsize=(12,8))
-plt.subplot(2, 2, 1)
-sns.lineplot(x=passengers.index, y=rolling_avg_non_wtd(passengers['#Passengers'], 3))
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
-plt.title('3-MA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
-plt.subplot(2, 2, 2)
-sns.lineplot(x=passengers.index, y=rolling_avg_non_wtd(passengers['#Passengers'], 5))
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
-plt.title('5-MA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
-plt.subplot(2, 2, 3)
-sns.lineplot(x=passengers.index, y=rolling_avg_non_wtd(passengers['#Passengers'], 7))
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
-plt.title('7-MA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
-plt.subplot(2, 2, 4)
-sns.lineplot(x=passengers.index, y=rolling_avg_non_wtd(passengers['#Passengers'], 9))
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
-plt.title('9-MA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
 
-plt.legend(loc='best')
-plt.tight_layout(pad=1)
+#%%
+# 5.
+# Using the theoretical ACF from the previous question, display GPAC table for k=7 and j=7.
+# Do you see a pattern of constant column 0.5 and a row of zeros?
+# What is the estimated na and what is the estimated nb?
+# Hint: You should observe a clear pattern like below figure.
+# You need to utilize the seaborn package and heatmap to develop the following table.
+
+
+gpac = GPAC(ar1000[14:], 7, 7)
+plt.figure()
+sns.heatmap(gpac, annot=True)
+plt.title('GPAC Table')
+plt.xlabel('k values')
+plt.ylabel('j values')
 plt.show()
 
 #%%
-# 3. Using the function developed in the step 1 plot:
-      # Estimated cycle-trend versus the original dataset -- # Plot only the first 50 samples
-            # 2x4-MA, 2x6-MA, 2x8-MA, and 2x10-MA
-            # All in one graph (use the subplot 2x2).
-            # Plot the detrended data on the same graph.
-            # Add an appropriate title, x-label, y-label, and legend to the graph.
+# 6.
+# Using Python and statsmodels package, plot the ACF and PACF of the process.
+    # Plot the ACF and PACF in one figure using subplot 2x1.
+    # Number of lags = 20.
 
-plt.figure(figsize=(12,8))
-plt.subplot(2, 2, 1)
-sns.lineplot(x=passengers.index, y=moving_average(passengers['#Passengers'], 2, 4))
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
-plt.title('2x4 MA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
-plt.subplot(2, 2, 2)
-sns.lineplot(x=passengers.index, y=moving_average(passengers['#Passengers'], 2, 6))
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
-plt.title('2x6 MA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
-plt.subplot(2, 2, 3)
-sns.lineplot(x=passengers.index, y=moving_average(passengers['#Passengers'], 2, 8))
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
-plt.title('2x8 MA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
-plt.subplot(2, 2, 4)
-sns.lineplot(x=passengers.index, y=moving_average(passengers['#Passengers'], 2, 10))
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'])
-plt.title('2x10 MA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
+#%%
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
-plt.legend(loc='best')
-plt.tight_layout(pad=1)
+def ACF_PACF_Plot(y,lags):
+    acf = sm.tsa.stattools.acf(y, nlags=lags)
+    pacf = sm.tsa.stattools.pacf(y, nlags=lags)
+    fig = plt.figure()
+    plt.subplot(211)
+    plt.title('ACF/PACF OF RAW DATA')
+    plot_acf(y, ax=plt.gca(), lags=lags)
+    plt.subplot(212)
+    plot_pacf(y, ax=plt.gca(), lags=lags)
+    fig.tight_layout(pad=3)
 plt.show()
 
-
 #%%
-# 4. Compare the ADF-test of the original dataset versus the detrended dataset using the 3-MA.
-
-#%%
-moving_average(passengers['#Passengers'], 2, 4)
-moving_average(passengers['#Passengers'], 2, 6)
-moving_average(passengers['#Passengers'], 2, 8)
-moving_average(passengers['#Passengers'], 2, 10)
-#%%
-rolling_avg_non_wtd(passengers['#Passengers'], 3)
-orig = pd.DataFrame(index=passengers.index, data=passengers['#Passengers'])
-ma3 = pd.DataFrame(index=passengers.index, data=rolling_avg_non_wtd(passengers['#Passengers'], 3))
-#orig
-ma3_drop = ma3.dropna()
-ma3_drop
+# 7.
+# Repeat step 3, 4, 5 and 6 for the following 7 examples with only 10000 samples
+# Example 2: ARMA (0,1): y(t) = e(t) + 0.5e(t-1)
+# Example 3: ARMA (1,1): y(t) + 0.5y(t-1) = e(t) + 0.5e(t-1)
+# Example 4: ARMA (2,0): y(t) + 0.5y(t-1) + 0.2y(t-2) = e(t)
+# Example 5: ARMA (2,1): y(t) + 0.5y(t-1) + 0.2y(t-2) = e(t) - 0.5e(t-1)
+# Example 6: ARMA (1,2): y(t) + 0.5y(t-1) = e(t) + 0.5e(t-1) - 0.4e(t-2)
+# Example 7: ARMA (0,2): y(t) = e(t) + 0.5e(t-1) - 0.4e(t-2)
+# Example 8: ARMA (2,2): y(t)+0.5y(t-1) +0.2y(t-2) = e(t)+0.5e(t-1) - 0.4e(t-2)
 
 
 
 #%%
-## ADF TEST - ORIGINAL
-print('ADF PASSENGERS ORIGINAL:')
-print(adf_test(['#Passengers'], passengers))
-print('*'*100)
-
-## ADF TEST - 3-MA
-print('ADF PASSENGERS 3-MA:')
-print(adf_test(0, ma3))
-print('*'*100)
+# 8.
+# Write down your observation about the ACF and PACF plot of the AR, MA and ARMA process in the above 8 examples.
 
 
 #%% [markdown]
-# Comparing results generated above displaying ADF Statistics across both original and transformed data:
-    # * ADF Statistics for both the original data and 3-day moving average are very similar across the board.
-    # * For 3-MA data relative to Original data, slight outperformance is observed across both ADF Statistics and P-Values.
-        # * ADF STATISTICS: 3-MA -- 0.822058 /// ORIGINAL -- 0.815369
+# TBU
+
 
 
 #%%
-# 5.  Apply the STL decomposition method to the dataset.
-      # Plot the trend, seasonality, and reminder in one graph.
-      # Add an appropriate title, x-label, y-label, and legend to the graph.
 
-#%%
-## STL DECOMPOSITION
-passenger_series =  pd.Series(np.array(passengers['#Passengers']),
-                        index = passengers.index,
-                        # index=pd.date_range('1981-01-01',
-                        # periods=len(temp),
-                        # freq='d'),
-                        name='PASSENGERS')
 
-print(passenger_series)
+
 
 #%%
 
-## STL DECOMPOSITION
-STL = STL(passenger_series)
-res = STL.fit()
+print("====================QUESTION 1==========================")
+samples_size = input("Enter # of samples: ")
+mean = input("Enter Mean (WN): ")
+var = input("Enter Variance (WN): ")
+ar_order = input("Enter AR order: ")
+ma_order = input("Enter MA order: ")
 
-#%%
-plt.figure(figsize=(12,8))
-fig = res.plot()
-plt.xlabel('DATE', fontsize=12)
-plt.tight_layout(pad=1)
+ar_inputs = []
+if int(ar_order) > 0:
+    for i in range(int(ar_order)):
+        text = "Enter a" + str(i + 1) + ": "
+        input_value = input(text)
+        ar_inputs.append(float(input_value))
+
+ma_inputs = []
+if int(ma_order) > 0:
+    for i in range(int(ma_order)):
+        text = "Enter b" + str(i + 1) + ": "
+        input_value = input(text)
+        ma_inputs.append(float(input_value))
+
+ar = np.r_[1, ar_inputs]
+ma = np.r_[1, ma_inputs]
+
+samples_size = int(samples_size)
+ar_order = int(ar_order)
+ma_order = int(ma_order)
+mean = float(mean)
+var = float(var)
+
+arma_process = sm.tsa.ArmaProcess(ar, ma)
+mean_y = mean * (1 + np.sum(ma_inputs)) / (1 + np.sum(ar_inputs))
+y = arma_process.generate_sample(samples_size, scale=np.sqrt(var) + mean_y)
+
+
+acf_lags = 60
+ry = arma_process.acf(lags=acf_lags)
+toolbox.gpac_calc(ry, 5, 5)
+
+acf_lags = 15
+new_ry = toolbox.auto_correlation_cal(y, acf_lags)
+toolbox.gpac_calc(new_ry, 7, 7)
+
+lags = 20
+
+acf = arma_process.acf(lags=lags)
+pacf = arma_process.pacf(lags=lags)
+
+fig, axs = plt.subplots(2, 1)
+fig.subplots_adjust(hspace=1.5, wspace=0.5)
+axs = axs.ravel()
+
+ry = arma_process.acf(lags=lags)
+a1 = ry
+a2 = a1[::-1]
+a = np.concatenate((a2[:-1], a1))
+x1 = np.arange(0, lags)
+x2 = -x1[::-1]
+x = np.concatenate((x2[:-1], x1))
+(marker, stemlines, baselines) = axs[0].stem(x, a,
+                                             use_line_collection=True, markerfmt='o')
+plt.setp(marker, color='red', marker='o')
+plt.setp(baselines, color='gray', linewidth=2, linestyle='-')
+m = 1.96 / np.sqrt(100)
+axs[0].axhspan(-m, m, alpha=.2, color='blue')
+axs[0].set_title("ACF GPAC")
+axs[0].set_ylabel("ACF")
+axs[0].set_xlabel("Frequency")
+
+ry = arma_process.pacf(lags=lags)
+a1 = ry
+a2 = a1[::-1]
+a = np.concatenate((a2[:-1], a1))
+x1 = np.arange(0, lags)
+x2 = -x1[::-1]
+x = np.concatenate((x2[:-1], x1))
+(marker, stemlines, baselines) = axs[1].stem(x, a,
+                                             use_line_collection=True, markerfmt='o')
+plt.setp(marker, color='red', marker='o')
+plt.setp(baselines, color='gray', linewidth=2, linestyle='-')
+m = 1.96 / np.sqrt(100)
+axs[1].axhspan(-m, m, alpha=.2, color='blue')
+axs[1].set_title("PACF GPAC")
+axs[1].set_ylabel("PACF")
+axs[1].set_xlabel("Frequency")
+
 plt.show()
 
-#%%
-T = res.trend
-S = res.seasonal
-R = res.resid
 
-#%%
-# 6. Calculate the seasonally adjusted data and plot it versus the original data.
-      # Add an appropriate title, x- label, y-label, and legend to the graph.
-
-adjusted_seasonal = passenger_series - S
-
-plt.figure(figsize=(12,8))
-sns.lineplot(x=adjusted_seasonal.index, y=adjusted_seasonal, legend='full')
-sns.lineplot(x=passengers.index, y=passengers['#Passengers'], legend='full')
-plt.title('SEASONALLY ADJUSTED DATA VS. ORIGINAL DATA', fontsize=18)
-plt.xlabel('DATE', fontsize=15)
-plt.ylabel('PASSENGERS', fontsize=15)
-plt.legend(loc='best')
-plt.tight_layout(pad=1)
-plt.show()
-
-#%%
-# 7- Calculate the strength of trend:
-
-## STRENGTH OF TREND ##
-def strength_of_trend(residual, trend):
-    var_resid = np.nanvar(residual)
-    var_resid_trend = np.nanvar(np.add(residual, trend))
-    return 1 - (var_resid / var_resid_trend)
+samples_size = 5000
+arma_process = sm.tsa.ArmaProcess(ar, ma)
+mean_y = mean * (1 + np.sum(ma_inputs)) / (1 + np.sum(ar_inputs))
+arma_process.generate_sample(samples_size, scale=np.sqrt(var) + mean_y)
 
 
-F = np.maximum(0, 1-np.var(R)/np.var(np.array(T)+np.array(R)))
-
-print(f'STRENGTH OF TREND: {100*F:.3f}% or {strength_of_trend(R, T):.5f}')
-
-#%%
-# 8-Calculate the strength of seasonality:
-
-## STRENGTH OF SEASONAL ##
-def strength_of_seasonal(residual, seasonal):
-    var_resid = np.nanvar(residual)
-    var_resid_seasonal = np.nanvar(np.add(residual, seasonal))
-    return 1 - (var_resid / var_resid_seasonal)
-
-F = np.maximum(0, 1-np.var(R)/np.var(np.array(S)+np.array(R)))
-
-print(f'STRENGTH OF SEASONALITY: {100*F:.3f}% or {strength_of_seasonal(R, S):.5f}')
-
-#%% #%% [markdown]
-# 9- Based on the results in the previous steps - is this data set strongly seasonal or strongly trended?
-      # Justify your answer.
-
-# Based on results from prior calculations, this data set appears to be both strongly trended and strongly seasonal.
-# Strength of Trend (~99.8%) and Strength of Seasonality (~99.7%) are very close to 1, indicating both are apparent.
-# Strength of Trend slightly exceeds Strength of Seasonality so the data may be slightly more trended than seasonal.
-# Moreover, viewing chart graphics as presented appear to visually confirm both trend and seasonal tendencies.
+acf_lags = 60
+ry = arma_process.acf(lags=acf_lags)
+toolbox.gpac_calc(ry, 5, 5)
 
 
-#%%
+samples_size = 10000
+arma_process = sm.tsa.ArmaProcess(ar, ma)
+mean_y = mean * (1 + np.sum(ma_inputs)) / (1 + np.sum(ar_inputs))
+arma_process.generate_sample(samples_size, scale=np.sqrt(var) + mean_y)
+
+acf_lags = 60
+ry = arma_process.acf(lags=acf_lags)
+toolbox.gpac_calc(ry, 5, 5)
