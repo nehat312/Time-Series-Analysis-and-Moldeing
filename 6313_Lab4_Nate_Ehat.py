@@ -66,12 +66,10 @@ def generate_ARMA():
         AR_coeff.append(float(input(f'INPUT: AR LAST COEFFICIENT [RANGE (0,1)]')))
     for i in range(MA_order):
         MA_coeff.append(float(input(f'INPUT: MA LAST COEFFICIENT [RANGE (0,1)]')))
-    AR_params = np.array(AR_coeff) # * (-1)
+    AR_params = np.array(AR_coeff)
     MA_params = np.array(MA_coeff)
     ar = np.r_[1, -AR_params]  # add zero-lag / negate
     ma = np.r_[1, MA_params]  # add zero-lag
-    # ar = np.insert(AR_params, 1)
-    # ma = np.insert(MA_params, 1)
     mean_ap_y = m * (1 + np.sum(MA_params)) / (1 + np.sum(AR_params))
     arma_process = sm.tsa.ArmaProcess(ar, ma)
     arma_sample = arma_process.generate_sample(nsample=n, scale=np.sqrt(v)) + mean_ap_y # + m (??) #np.array() ???
@@ -84,7 +82,7 @@ def generate_ARMA():
         ry2 = np.concatenate((np.reshape(ry1, l), ry[1:]))
         return ry2
     elif acf == 0:
-        return arma_sample #arma_process,
+        return arma_sample
 
 #%%
 # 2. Edit the python code in step 1 that implement the GPAC table.
@@ -155,12 +153,8 @@ print(example1_acf)
     # Hint: You should observe a clear pattern like below figure.
     # Utilize the seaborn package and heatmap to develop the following table.
 
-
-
-#%%
-
 ## GENERATE GPAC TABLE
-gpac1 = GPAC(example1[14:], 7, 7) #example1
+gpac1 = GPAC(example1_acf, 7, 7) #example1
 print(gpac1)
 
 #%%
@@ -178,8 +172,6 @@ plt.show()
     # Plot the ACF and PACF in one figure using subplot 2x1.
     # Number of lags = 20.
 
-ACF_PACF_Plot(example1, 20) #10
-
 #%%
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
@@ -193,7 +185,10 @@ def ACF_PACF_Plot(y,lags):
     plt.subplot(212)
     plot_pacf(y, ax=plt.gca(), lags=lags)
     fig.tight_layout(pad=3)
-plt.show()
+    plt.show()
+
+#%%
+ACF_PACF_Plot(example1, 20) #10
 
 #%%
 # 7.
@@ -210,8 +205,33 @@ plt.show()
     # last_coef_AR = 0 or 1 (??)
     # last_coef_MA = 0.5
 
+## SIMULATE ARMA
+example2 = generate_ARMA()
 
+#%%
+## ACF FUNCTION
+example2_acf = sm.tsa.stattools.acf(example2, nlags=15)
 
+print(f'THEORETICAL ACF:')
+print(example2_acf)
+
+#%%
+## GENERATE GPAC TABLE
+gpac2 = GPAC(example2_acf, 7, 7) #example1
+print(gpac2)
+
+#%%
+## GPAC HEATMAP
+plt.figure()
+sns.heatmap(gpac2, annot=True)
+plt.title('GPAC MATRIX')
+plt.xlabel('K VALUES')
+plt.ylabel('J VALUES')
+plt.show()
+
+#%%
+## ACF / PACF PLOT
+ACF_PACF_Plot(example2, 20)
 
 #%%
 # Example 3: ARMA (1,1): y(t) + 0.5y(t-1) = e(t) + 0.5e(t-1)
@@ -223,7 +243,33 @@ plt.show()
     # last_coef_AR = 0.5
     # last_coef_MA = 0.5
 
+## SIMULATE ARMA
+example3 = generate_ARMA()
 
+#%%
+## ACF FUNCTION
+example3_acf = sm.tsa.stattools.acf(example3, nlags=15)
+
+print(f'THEORETICAL ACF:')
+print(example3_acf)
+
+#%%
+## GENERATE GPAC TABLE
+gpac3 = GPAC(example3_acf, 7, 7)
+print(gpac3)
+
+#%%
+## GPAC HEATMAP
+plt.figure()
+sns.heatmap(gpac3, annot=True)
+plt.title('GPAC MATRIX')
+plt.xlabel('K VALUES')
+plt.ylabel('J VALUES')
+plt.show()
+
+#%%
+## ACF / PACF PLOT
+ACF_PACF_Plot(example3, 20)
 
 # %%
 # Example 4: ARMA (2,0): y(t) + 0.5y(t-1) + 0.2y(t-2) = e(t)
@@ -235,7 +281,33 @@ plt.show()
     # last_coef_AR = 0.2
     # last_coef_MA = 1 or 0 (??)
 
+## SIMULATE ARMA
+example4 = generate_ARMA()
 
+#%%
+## ACF FUNCTION
+example4_acf = sm.tsa.stattools.acf(example4, nlags=15)
+
+print(f'THEORETICAL ACF:')
+print(example4_acf)
+
+#%%
+## GENERATE GPAC TABLE
+gpac4 = GPAC(example4_acf, 7, 7)
+print(gpac4)
+
+#%%
+## GPAC HEATMAP
+plt.figure()
+sns.heatmap(gpac4, annot=True)
+plt.title('GPAC MATRIX')
+plt.xlabel('K VALUES')
+plt.ylabel('J VALUES')
+plt.show()
+
+#%%
+## ACF / PACF PLOT
+ACF_PACF_Plot(example4, 20)
 
 # %%
 # Example 5: ARMA (2,1): y(t) + 0.5y(t-1) + 0.2y(t-2) = e(t) - 0.5e(t-1)
@@ -247,7 +319,33 @@ plt.show()
     # last_coef_AR = 0.2
     # last_coef_MA = 0.5
 
+## SIMULATE ARMA
+example5 = generate_ARMA()
 
+#%%
+## ACF FUNCTION
+example5_acf = sm.tsa.stattools.acf(example5, nlags=15)
+
+print(f'THEORETICAL ACF:')
+print(example5_acf)
+
+#%%
+## GENERATE GPAC TABLE
+gpac5 = GPAC(example5_acf, 7, 7) #example1
+print(gpac5)
+
+#%%
+## GPAC HEATMAP
+plt.figure()
+sns.heatmap(gpac5, annot=True)
+plt.title('GPAC MATRIX')
+plt.xlabel('K VALUES')
+plt.ylabel('J VALUES')
+plt.show()
+
+#%%
+## ACF / PACF PLOT
+ACF_PACF_Plot(example5, 20)
 
 # %%
 # Example 6: ARMA (1,2): y(t) + 0.5y(t-1) = e(t) + 0.5e(t-1) - 0.4e(t-2)
@@ -259,6 +357,34 @@ plt.show()
     # last_coef_AR = 0.5
     # last_coef_MA = 0.4
 
+## SIMULATE ARMA
+example6 = generate_ARMA()
+
+#%%
+## ACF FUNCTION
+example6_acf = sm.tsa.stattools.acf(example6, nlags=15)
+
+print(f'THEORETICAL ACF:')
+print(example6_acf)
+
+#%%
+## GENERATE GPAC TABLE
+gpac6 = GPAC(example6_acf, 7, 7) #example1
+print(gpac6)
+
+#%%
+## GPAC HEATMAP
+plt.figure()
+sns.heatmap(gpac6, annot=True)
+plt.title('GPAC MATRIX')
+plt.xlabel('K VALUES')
+plt.ylabel('J VALUES')
+plt.show()
+
+#%%
+## ACF / PACF PLOT
+ACF_PACF_Plot(example6, 20)
+
 # %%
 # Example 7: ARMA (0,2): y(t) = e(t) + 0.5e(t-1) - 0.4e(t-2)
 # N = 10000
@@ -268,6 +394,34 @@ plt.show()
     # order_MA = 2
     # last_coef_AR = 0 or 1 (??)
     # last_coef_MA = 0.4
+
+## SIMULATE ARMA
+example7 = generate_ARMA()
+
+#%%
+## ACF FUNCTION
+example7_acf = sm.tsa.stattools.acf(example7, nlags=15)
+
+print(f'THEORETICAL ACF:')
+print(example7_acf)
+
+#%%
+## GENERATE GPAC TABLE
+gpac7 = GPAC(example7_acf, 7, 7) #example1
+print(gpac7)
+
+#%%
+## GPAC HEATMAP
+plt.figure()
+sns.heatmap(gpac7, annot=True)
+plt.title('GPAC MATRIX')
+plt.xlabel('K VALUES')
+plt.ylabel('J VALUES')
+plt.show()
+
+#%%
+## ACF / PACF PLOT
+ACF_PACF_Plot(example7, 20)
 
 # %%
 # Example 8: ARMA (2,2): y(t)+0.5y(t-1)+0.2y(t-2) = e(t)+0.5e(t-1)-0.4e(t-2)
@@ -279,187 +433,33 @@ plt.show()
     # last_coef_AR = 0.2
     # last_coef_MA = 0.4
 
-# %%
-
-
-#%%
-# 8.
-# Record observations about ACF and PACF plot of AR, MA and ARMA process
-    # Across the above 8 examples.
-
-#%% [markdown]
-# EXAMPLE 1:
-
-#%% [markdown]
-# EXAMPLE 2:
-
-#%% [markdown]
-# EXAMPLE 3:
-
-
+## SIMULATE ARMA
+example8 = generate_ARMA()
 
 #%%
+## ACF FUNCTION
+example8_acf = sm.tsa.stattools.acf(example8, nlags=15)
 
-
-
+print(f'THEORETICAL ACF:')
+print(example8_acf)
 
 #%%
+## GENERATE GPAC TABLE
+gpac8 = GPAC(example8_acf, 7, 7) #example1
+print(gpac8)
 
-print("====================QUESTION 1==========================")
-samples_size = input("Enter # of samples: ")
-mean = input("Enter Mean (WN): ")
-var = input("Enter Variance (WN): ")
-ar_order = input("Enter AR order: ")
-ma_order = input("Enter MA order: ")
-
-ar_inputs = []
-if int(ar_order) > 0:
-    for i in range(int(ar_order)):
-        text = "Enter a" + str(i + 1) + ": "
-        input_value = input(text)
-        ar_inputs.append(float(input_value))
-
-ma_inputs = []
-if int(ma_order) > 0:
-    for i in range(int(ma_order)):
-        text = "Enter b" + str(i + 1) + ": "
-        input_value = input(text)
-        ma_inputs.append(float(input_value))
-
-ar = np.r_[1, ar_inputs]
-ma = np.r_[1, ma_inputs]
-
-samples_size = int(samples_size)
-ar_order = int(ar_order)
-ma_order = int(ma_order)
-mean = float(mean)
-var = float(var)
-
-arma_process = sm.tsa.ArmaProcess(ar, ma)
-mean_y = mean * (1 + np.sum(ma_inputs)) / (1 + np.sum(ar_inputs))
-y = arma_process.generate_sample(samples_size, scale=np.sqrt(var) + mean_y)
-
-
-acf_lags = 60
-ry = arma_process.acf(lags=acf_lags)
-toolbox.gpac_calc(ry, 5, 5)
-
-acf_lags = 15
-new_ry = toolbox.auto_correlation_cal(y, acf_lags)
-toolbox.gpac_calc(new_ry, 7, 7)
-
-lags = 20
-
-acf = arma_process.acf(lags=lags)
-pacf = arma_process.pacf(lags=lags)
-
-fig, axs = plt.subplots(2, 1)
-fig.subplots_adjust(hspace=1.5, wspace=0.5)
-axs = axs.ravel()
-
-ry = arma_process.acf(lags=lags)
-a1 = ry
-a2 = a1[::-1]
-a = np.concatenate((a2[:-1], a1))
-x1 = np.arange(0, lags)
-x2 = -x1[::-1]
-x = np.concatenate((x2[:-1], x1))
-(marker, stemlines, baselines) = axs[0].stem(x, a,
-                                             use_line_collection=True, markerfmt='o')
-plt.setp(marker, color='red', marker='o')
-plt.setp(baselines, color='gray', linewidth=2, linestyle='-')
-m = 1.96 / np.sqrt(100)
-axs[0].axhspan(-m, m, alpha=.2, color='blue')
-axs[0].set_title("ACF GPAC")
-axs[0].set_ylabel("ACF")
-axs[0].set_xlabel("Frequency")
-
-ry = arma_process.pacf(lags=lags)
-a1 = ry
-a2 = a1[::-1]
-a = np.concatenate((a2[:-1], a1))
-x1 = np.arange(0, lags)
-x2 = -x1[::-1]
-x = np.concatenate((x2[:-1], x1))
-(marker, stemlines, baselines) = axs[1].stem(x, a,
-                                             use_line_collection=True, markerfmt='o')
-plt.setp(marker, color='red', marker='o')
-plt.setp(baselines, color='gray', linewidth=2, linestyle='-')
-m = 1.96 / np.sqrt(100)
-axs[1].axhspan(-m, m, alpha=.2, color='blue')
-axs[1].set_title("PACF GPAC")
-axs[1].set_ylabel("PACF")
-axs[1].set_xlabel("Frequency")
-
+#%%
+## GPAC HEATMAP
+plt.figure()
+sns.heatmap(gpac8, annot=True)
+plt.title('GPAC MATRIX')
+plt.xlabel('K VALUES')
+plt.ylabel('J VALUES')
 plt.show()
 
-
-samples_size = 5000
-arma_process = sm.tsa.ArmaProcess(ar, ma)
-mean_y = mean * (1 + np.sum(ma_inputs)) / (1 + np.sum(ar_inputs))
-arma_process.generate_sample(samples_size, scale=np.sqrt(var) + mean_y)
-
-
-acf_lags = 60
-ry = arma_process.acf(lags=acf_lags)
-toolbox.gpac_calc(ry, 5, 5)
-
-
-samples_size = 10000
-arma_process = sm.tsa.ArmaProcess(ar, ma)
-mean_y = mean * (1 + np.sum(ma_inputs)) / (1 + np.sum(ar_inputs))
-arma_process.generate_sample(samples_size, scale=np.sqrt(var) + mean_y)
-
-acf_lags = 60
-ry = arma_process.acf(lags=acf_lags)
-toolbox.gpac_calc(ry, 5, 5)
-
+#%%
+## ACF / PACF PLOT
+ACF_PACF_Plot(example8, 20)
 
 
 #%%
-
-#%%
-# 𝑦(𝑡) − 0.5𝑦(𝑡 − 1) = 𝑒(𝑡)
-    # e(t) is WN(1,2).
-
-N1 = 1000
-np.random.seed(42)
-mean_e1 = 1
-var_e1 = 2
-e = np.random.normal(mean_e1, var_e1, N1)
-
-AR_params = [0.5]
-MA_params = [0]
-na, nb = 1, 0
-ar = np.r_[1, AR_params]
-ma = np.r_[1, MA_params]
-
-print(ar)
-print(ma)
-
-#%%
-## CONSTRUCT ARMA PROCESS
-arma_process = sm.tsa.ArmaProcess(ar, ma)
-print(f'IS ARMA PROCESS STATIONARY?: {arma_process.isstationary}')
-
-#%%
-mean_y = mean_e1 * (1 + np.sum(MA_params)) / (1 + np.sum(AR_params))
-print(f'MEAN Y: {mean_y:.3f}')
-
-#%%
-y = arma_process.generate_sample(N1, scale=np.sqrt(var_e1)) + mean_y
-
-#%%
-print(f'EXPERIMENTAL MEAN: {np.mean(y)}')
-print('*'*50)
-print(f'EXPERIMENTAL VARIANCE: {np.var(y)}')
-
-#%%
-## THEORETICAL ACF
-ry = arma_process.acf(lags=15)
-ry1 = ry[::-1]
-ry2 = np.concatenate((np.reshape(ry1, 15), ry[1:]))
-
-print(f'THEORETICAL MEAN: {np.mean(ry2)}')
-print('*'*50)
-print(f'THEORETICAL VARIANCE: {np.var(ry2)}')

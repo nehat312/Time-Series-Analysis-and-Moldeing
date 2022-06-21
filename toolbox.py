@@ -527,23 +527,35 @@ def ACF_PACF_Plot(y, lags):
     return
 
 #%%
-def arma_input_process_and_sample():
-    samples = int(input('ENTER NUMBER OF SAMPLES'))
-    mean_wn = int(input('ENTER MEAN OF WHITE NOISE'))
-    var_wn = int(input('Enter variance of white noise'))
-    ar_order = int(input('ENTER AR ORDER'))
-    ma_order = int(input('Enter MA order'))
-    ar_coeff = []
-    [ar_coeff.append(int(input(f'Enter #{x} AR coefficient, hint: range is (0,1)'))) for x in ar_order]
-    ma_coeff = []
-    [ma_coeff.append(int(input(f'Enter #{x} MA coefficient, hint: range is (0,1)'))) for x in ma_order]
-    arparams = np.array(ar_coeff * (-1))
-    maparams = np.array(ma_coeff)
-    ar = np.insert(arparams, 1)
-    ma = np.insert(maparams, 1)
+def generate_ARMA():
+    n = int(input("INPUT: NUMBER OF SAMPLES"))
+    m = int(input("INPUT: MEAN OF WHITE NOISE"))
+    v = int(input("INPUT: VARIANCE OF WHITE NOISE"))
+    AR_order = int(input("INPUT: ORDER OF AR"))
+    MA_order = int(input("INPUT: ORDER OF MA"))
+    AR_coeff = []
+    MA_coeff = []
+    for i in range(AR_order):
+        AR_coeff.append(float(input(f'INPUT: AR LAST COEFFICIENT [RANGE (0,1)]')))
+    for i in range(MA_order):
+        MA_coeff.append(float(input(f'INPUT: MA LAST COEFFICIENT [RANGE (0,1)]')))
+    AR_params = np.array(AR_coeff)
+    MA_params = np.array(MA_coeff)
+    ar = np.r_[1, -AR_params]  # add zero-lag / negate
+    ma = np.r_[1, MA_params]  # add zero-lag
+    mean_ap_y = m * (1 + np.sum(MA_params)) / (1 + np.sum(AR_params))
     arma_process = sm.tsa.ArmaProcess(ar, ma)
-    arma_sample = np.array(arma_process.generate_sample(nsample=samples, scale=var_wn)) + mean_wn
-    return arma_process, arma_sample
+    arma_sample = arma_process.generate_sample(nsample=n, scale=np.sqrt(v)) + mean_ap_y # + m (??) #np.array() ???
+
+    acf = int(input("INPUT: 1/0 FOR ACF"))
+    if acf == 1:
+        l = int(input("INPUT: NUMBER OF LAGS"))
+        ry = arma_process.acf(lags=l)
+        ry1 = ry[::-1]
+        ry2 = np.concatenate((np.reshape(ry1, l), ry[1:]))
+        return ry2
+    elif acf == 0:
+        return arma_sample
 
 #%%
 ## ARMA PROCESS ##
@@ -562,41 +574,28 @@ def arma_process(ar_param, ma_param, samples):
 
 #%%
 ## GPAC MATRIX ##
-def gpac_matrix(ry, j, k):
-    # generates left most column
-    col = []
-    for i in range(j):
-        col.append(ry[i + 1] / ry[i])
-    table = pd.DataFrame(col, index=np.arange(0, j).tolist()) # convert values to dataframe - rows equal to [0,j)
+def GPAC(ry, j0, k0):
+    def phi(ry, j, k): # determine Phi
+        denominator = np.zeros(shape=(k, k))# placeholder zeroes for denominator
+        for a in range(k): # replace denominator matrix with ry(j) values
+            for b in range(k):
+                denominator[a][b] = ry[abs(j + a - b)]
+        numerator = denominator.copy() # copy of denominator for numerator
+        numL = np.array(ry[j + 1:j + k + 1]) # generate last column for numerator
+        numerator[:, -1] = numL # generate last column for numerator
+        phi = np.linalg.det(numerator) / np.linalg.det(denominator)
+        return phi
 
+    table0 = [[0 for i in range(1, k0)] for i in range(j0)]
 
-    val = [] # list to contain for PACF values in the GPAC matrix
-    # for K in GPAC, you do not want to include column 1 as it will all be 1's
-    # first loop goes through the (k,k) matrices
-    for a in range(2, k + 1):
-        # second loop goes through the (k,k) matrices as j increases
-        for f in range(j):  # f is j
-            b_val = []  # numerator
-            t_val = []  # denominator
-            for d in range(a):  #
-                den = []
-                for h in range(a):
-                    den.append(ry[abs(f - h + d)])
-                b_val.append(den.copy())
-                t_val.append(den.copy())
-            mes = a
-            for l in range(a):
-                t_val[l][mes - 1] = ry[l + 1 + f]
+    for c in range(j0):
+        for d in range(1, k0):
+            table0[c][d - 1] = phi(ry, c, d)
 
-            pac = np.linalg.det(t_val) / np.linalg.det(b_val)
-            val.append(pac)
-    # reshape the GPAC value so there is no 0 row in k
-    GPAC = np.array(val).reshape(k - 1, j)
-    # correctly transpose the data
-    GPAC_T = pd.DataFrame(GPAC.T)
-    GPAC_F = pd.concat([table, GPAC_T], axis=1)
-    GPAC_F.columns = list(range(1, k + 1))
-    return GPAC_F
+    pac_val = pd.DataFrame(np.array(table0),
+                       index=np.arange(j0),
+                       columns=np.arange(1, k0))
+    return pac_val
 
 #%%
 ## GPAC PLOT##
@@ -607,6 +606,11 @@ def gpac_plot(gpac_df):
     plt.xlabel('K VALUES')
     plt.ylabel('J VALUES')
     plt.show()
+
+#%%
+
+
+
 
 #%%
 ## GPAC WITH INPUT -- OLD ##
