@@ -531,7 +531,7 @@ def arma_input_process_and_sample():
     samples = int(input('ENTER NUMBER OF SAMPLES'))
     mean_wn = int(input('ENTER MEAN OF WHITE NOISE'))
     var_wn = int(input('Enter variance of white noise'))
-    ar_order = int(input('Enter AR order'))
+    ar_order = int(input('ENTER AR ORDER'))
     ma_order = int(input('Enter MA order'))
     ar_coeff = []
     [ar_coeff.append(int(input(f'Enter #{x} AR coefficient, hint: range is (0,1)'))) for x in ar_order]
@@ -548,7 +548,7 @@ def arma_input_process_and_sample():
 #%%
 ## ARMA PROCESS ##
 def arma_process(ar_param, ma_param, samples):
-    np.random.seed(2)
+    np.random.seed(42)
     arparams = np.array(ar_param)
     maparams = np.array(ma_param)
     # print(arparams)
@@ -568,9 +568,9 @@ def gpac_matrix(ry, j, k):
     for i in range(j):
         col.append(ry[i + 1] / ry[i])
     table = pd.DataFrame(col, index=np.arange(0, j).tolist()) # convert values to dataframe - rows equal to [0,j)
-    # list for values in the GPAC matrix
-    # this list compiles the various pacf values
-    val = []
+
+
+    val = [] # list to contain for PACF values in the GPAC matrix
     # for K in GPAC, you do not want to include column 1 as it will all be 1's
     # first loop goes through the (k,k) matrices
     for a in range(2, k + 1):
@@ -609,7 +609,7 @@ def gpac_plot(gpac_df):
     plt.show()
 
 #%%
-## GPAC FROM ARMA ##
+## GPAC WITH INPUT -- OLD ##
 def gpac_with_input():
     samples = int(input('Enter the number of samples'))
     mean_wn = int(input('Enter mean of white noise'))

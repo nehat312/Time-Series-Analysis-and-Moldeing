@@ -146,8 +146,10 @@ print(f'Experimental var is {np.var(y)}')
 
 #%%
 ## THEORETICAL ACF
-ry = arma_process.acf(lags=20)
-ry
+example1, y1 = arma_input_process_and_sample()
+ry = arma_process.acf(lags=15)
+ry1 = ry[::-1]
+ry2 = np.concatenate((np.reshape(ry1, 15), ry[1:]))
 
 
 #%%
@@ -155,7 +157,6 @@ ry
 #B = den
 #A = num
 
-#%%
 print(np.linalg.det(A) / np.linalg.det(B))
 
 
