@@ -135,6 +135,7 @@ print("\nIMPORT SUCCESS")
 #%%
 ## SAVE COPIES OF IMPORTS
 
+sector_comps = all_sectors_import
 office_comps = office_import
 residential_comps = residential_import
 lodging_comps = lodging_import
@@ -146,32 +147,22 @@ industrial_comps = industrial_import
 self_storage_comps = self_storage_import
 data_center_comps = data_center_import
 
-sector_df_dict = [office_comps, residential_comps,  lodging_comps, net_lease_comps, strip_center_comps,
+sector_df_list = [office_comps, residential_comps,  lodging_comps, net_lease_comps, strip_center_comps,
                   mall_comps, healthcare_comps, industrial_comps, self_storage_comps, data_center_comps]
 
 print("\nCOPIES SAVED")
 
 #%%
-all_sector_return_df = pd.concat(sector_df_dict)
+# all_sector_return_df = pd.concat(sector_df_list)
 # all_sector_return_df = pd.concat(office_comps['AVERAGE_RETURN_1D'], residential_comps['AVERAGE_RETURN_1D'])
-
-print(all_sector_return_df['AVERAGE_RETURN_1D'])
+# print(all_sector_return_df['AVERAGE_RETURN_1D'])
 
 #%%
-print(sector_df_dict[:])
-
+# print(sector_df_list[:])
 # print(sectors)
 
-
 #%%
-all_sector_returns = pd.DataFrame()
-for i in sector_df_dict:
-    all_sector_returns[f'{i}_AVERAGE_RETURN_1D'] = i['AVERAGE_RETURN_1D']
-
-#%%
-print(all_sector_returns)
-
-
+print(sector_comps)
 
 #%%
 
