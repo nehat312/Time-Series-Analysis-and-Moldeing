@@ -152,6 +152,11 @@ sector_df_list = [office_comps, residential_comps,  lodging_comps, net_lease_com
 
 print("\nCOPIES SAVED")
 
+
+#%%
+print(sector_comps.info())
+
+
 #%%
 # all_sector_return_df = pd.concat(sector_df_list)
 # all_sector_return_df = pd.concat(office_comps['AVERAGE_RETURN_1D'], residential_comps['AVERAGE_RETURN_1D'])
@@ -161,13 +166,7 @@ print("\nCOPIES SAVED")
 # print(sector_df_list[:])
 # print(sectors)
 
-#%%
-print(sector_comps)
-
-#%%
-
-
-
+#%% [markdown]
 
 #%%
 ## AUTO-CORRELATION FUNCTION ##
@@ -176,43 +175,48 @@ print(sector_comps)
 #%%
 ## AUTO-CORRELATION PLOT ##
 
-
-
+#%%
+print(sector_comps.columns)
 
 #%%
-all_sectors_returns_df = pd.concat(sector_df_dict)
-all_sectors_returns_df
 
+sector_return_cols = ['OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN_1D',
+                      'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D',
+                      'HC_AVG_RETURN_1D', 'IND_AVG_RETURN_1D', 'SS_AVG_RETURN_1D',
+                      'DC_AVG_RETURN_1D', 'ALL_AVG_RETURN_1D']
 
-# for col in sector_df_dict:
-#     if col == ['AVERAGE_RETURN_1D']:
+sector_returns = sector_comps[sector_return_cols]
+
+print(sector_returns.info())
 
 #%%
-print(all_sectors_returns_df.columns)
+# labels = sector_returns.columns
+# print(labels)
+
 
 #%%
 # PLOT
-fig, axes = plt.subplots(2,5,figsize=(16,8))
+fig, axes = plt.subplots(1,1,figsize=(12,8))
 # plt.figure(figsize=(10,8))
 
-
-
-
-sns.lineplot(x=passengers['Month'], y=passengers['#Passengers'])
-plt.title("AIR PASSENGERS (1949-1960)")
+for i in sector_returns.columns:
+    sns.lineplot(x=sector_returns.index, y=sector_returns[i], hue=sector_returns[i], legend='full') #['ALL_AVG_RETURN_1D']
+plt.title('1-DAY PRICE RETURN (%) (1/2000-6/2022)')
 plt.xlabel('DATE')
-plt.ylabel('PASSENGERS (#)')
+plt.ylabel('1-DAY PRICE RETURN (%)')
 plt.tight_layout(pad=1)
 #plt.grid()
+plt.legend(loc='best')
 plt.show()
 
 
 #%%
 ## TIME SERIES STATISTICS ##
-print("MEAN:", passengers['#Passengers'].mean(),
-      "VARIANCE:", passengers['#Passengers'].var(),
-      "STD DEV:", passengers['#Passengers'].std())
-print('*'*150)
+print(f'MEAN: {sector_returns.OFF_AVG_RETURN_1D.mean()}')
+print('*'*100)
+print(f'VARIANCE: {sector_returns.OFF_AVG_RETURN_1D.var()}')
+print('*'*100)
+print(f'STD DEV: {sector_returns.OFF_AVG_RETURN_1D.std()}')
 
 
 #%%
