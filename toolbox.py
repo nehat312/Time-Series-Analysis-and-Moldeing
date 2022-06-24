@@ -536,13 +536,13 @@ def generate_ARMA():
     AR_coeff = []
     MA_coeff = []
     for i in range(AR_order):
-        AR_coeff.append(float(input(f'INPUT: AR LAST COEFFICIENT [RANGE (0,1)]')))
+        AR_coeff.append(float(input(f'INPUT: AR LAST COEFFICIENT [RANGE (-1,1)]')))
     for i in range(MA_order):
-        MA_coeff.append(float(input(f'INPUT: MA LAST COEFFICIENT [RANGE (0,1)]')))
+        MA_coeff.append(float(input(f'INPUT: MA LAST COEFFICIENT [RANGE (-1,1)]')))
     AR_params = np.array(AR_coeff)
     MA_params = np.array(MA_coeff)
-    ar = np.r_[1, -AR_params]  # add zero-lag / negate
-    ma = np.r_[1, MA_params]  # add zero-lag
+    ar = np.r_[1, AR_params]
+    ma = np.r_[1, MA_params]
     mean_ap_y = m * (1 + np.sum(MA_params)) / (1 + np.sum(AR_params))
     arma_process = sm.tsa.ArmaProcess(ar, ma)
     arma_sample = arma_process.generate_sample(nsample=n, scale=np.sqrt(v)) + mean_ap_y # + m (??) #np.array() ???
@@ -553,9 +553,41 @@ def generate_ARMA():
         ry = arma_process.acf(lags=l)
         ry1 = ry[::-1]
         ry2 = np.concatenate((np.reshape(ry1, l), ry[1:]))
-        return ry2
+        return ry
     elif acf == 0:
         return arma_sample
+
+#%%
+## GPAC MATRIX ##
+def GPAC(ry, j0, k0):
+    def phi(ry, j, k):
+        den = np.zeros(shape=(k,k))
+        for a in range(k):
+            for b in range(k):
+                den[a][b] = ry[abs(j+a-b)]
+        num = den.copy()
+        numl = np.array(ry[abs(j+1):abs(j+k+1)])
+        num[:, -1] = numl
+        phi = np.linalg.det(num)/np.linalg.det(den)
+        return phi
+    tab = [[0 for i in range(1, k0+1)] for w in range(j0)]
+    for c in range(0, j0):
+        for d in range(1, k0+1):
+            tab[c][d-1] = phi(ry, c, d)
+    pac_val = pd.DataFrame(np.array(tab),
+                           index = np.arange(j0),
+                           columns=np.arange(1, k0+1))
+    return pac_val
+
+#%%
+## GPAC PLOT##
+def gpac_plot(gpac_df):
+    plt.figure()
+    sns.heatmap(gpac_df, annot=True)
+    plt.title('GPAC TABLE')
+    plt.xlabel('K VALUES')
+    plt.ylabel('J VALUES')
+    plt.show()
 
 #%%
 ## ARMA PROCESS ##
@@ -571,44 +603,6 @@ def arma_process(ar_param, ma_param, samples):
     ma = np.r_[1, maparams]
     arma_process = sm.tsa.ArmaProcess(ar, ma, nobs=samples)
     return arma_process
-
-#%%
-## GPAC MATRIX ##
-def GPAC(ry, j0, k0):
-    def phi(ry, j, k): # determine Phi
-        denominator = np.zeros(shape=(k, k))# placeholder zeroes for denominator
-        for a in range(k): # replace denominator matrix with ry(j) values
-            for b in range(k):
-                denominator[a][b] = ry[abs(j + a - b)]
-        numerator = denominator.copy() # copy of denominator for numerator
-        numL = np.array(ry[j + 1:j + k + 1]) # generate last column for numerator
-        numerator[:, -1] = numL # generate last column for numerator
-        phi = np.linalg.det(numerator) / np.linalg.det(denominator)
-        return phi
-
-    table0 = [[0 for i in range(1, k0)] for i in range(j0)]
-
-    for c in range(j0):
-        for d in range(1, k0):
-            table0[c][d - 1] = phi(ry, c, d)
-
-    pac_val = pd.DataFrame(np.array(table0),
-                       index=np.arange(j0),
-                       columns=np.arange(1, k0))
-    return pac_val
-
-#%%
-## GPAC PLOT##
-def gpac_plot(gpac_df):
-    plt.figure()
-    sns.heatmap(gpac_df, annot=True)
-    plt.title('GPAC TABLE')
-    plt.xlabel('K VALUES')
-    plt.ylabel('J VALUES')
-    plt.show()
-
-#%%
-
 
 
 

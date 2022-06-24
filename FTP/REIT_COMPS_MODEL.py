@@ -155,16 +155,13 @@ print("\nCOPIES SAVED")
 
 #%%
 print(sector_comps.info())
-
+print(sector_comps.columns)
 
 #%%
 # all_sector_return_df = pd.concat(sector_df_list)
 # all_sector_return_df = pd.concat(office_comps['AVERAGE_RETURN_1D'], residential_comps['AVERAGE_RETURN_1D'])
 # print(all_sector_return_df['AVERAGE_RETURN_1D'])
 
-#%%
-# print(sector_df_list[:])
-# print(sectors)
 
 #%% [markdown]
 
@@ -176,10 +173,6 @@ print(sector_comps.info())
 ## AUTO-CORRELATION PLOT ##
 
 #%%
-print(sector_comps.columns)
-
-#%%
-
 sector_return_cols = ['OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN_1D',
                       'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D',
                       'HC_AVG_RETURN_1D', 'IND_AVG_RETURN_1D', 'SS_AVG_RETURN_1D',
@@ -188,6 +181,7 @@ sector_return_cols = ['OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN
 sector_returns = sector_comps[sector_return_cols]
 
 print(sector_returns.info())
+print(sector_returns.columns)
 
 #%%
 # labels = sector_returns.columns
@@ -222,11 +216,15 @@ print(f'STD DEV: {sector_returns.OFF_AVG_RETURN_1D.std()}')
 #%%
 # FILTER START DATE
 new_start_date = '7/1/2009' #'4/1/2009' #'1/2/2009'
-office_comps_after_2009 = office_comps[office_comps.index >= new_start_date]
-office_comps_after_2009
 
+sector_returns_range = sector_returns[sector_returns.index >= new_start_date]
+sector_returns_range
+
+# office_comps_after_2009 = office_comps[office_comps.index >= new_start_date]
+# office_comps_after_2009
 
 #%%
+## ROLLING MEAN / VARIANCE ##
 # SET COLUMN INDICES FOR CHART TITLES
 office_col_index = office_comps_after_2009.columns[33].upper() #16
 print(office_col_index)
@@ -293,15 +291,53 @@ def adf_kpss_statistic(timeseries):
 
 
 #%%
-## ADF TEST ##
-print('ADF - ___:')
-print(adf_test(['AVERAGE_RETURN_1D'], office_comps))
+## ADF TESTS ##
+print(f'ADF TEST - ALL SECTORS')
+print(adf_test(['ALL_AVG_RETURN_1D'], sector_returns))
 print('*'*100)
+print(f'ADF TEST - OFFICE')
+print(adf_test(['OFF_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - RESIDENTIAL')
+print(adf_test(['RESI_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - LODGING')
+print(adf_test(['HOT_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - NET LEASE')
+print(adf_test(['NL_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - STRIP CENTER')
+print(adf_test(['SC_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - MALL')
+print(adf_test(['MALL_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - HEALTH CARE')
+print(adf_test(['HC_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - INDUSTRIAL')
+print(adf_test(['IND_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - SELF STORAGE')
+print(adf_test(['SS_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+print(f'ADF TEST - DATA CENTER')
+print(adf_test(['DC_AVG_RETURN_1D'], sector_returns))
+print('*'*100)
+
+
+    #%%
+## ADF TEST ##
+
+    print(f'ADF TEST - {col}:')
+    print(adf_test(['AVERAGE_RETURN_1D'], sector_returns))
+    print('*'*100)
 
 #%%
 ## KPSS TEST ##
 
-print('KPSS - ___:')
+print(f'KPSS TEST - ___:')
 print(kpss_test(office_comps['AVERAGE_RETURN_1D']))
 print('*'*100)
 
