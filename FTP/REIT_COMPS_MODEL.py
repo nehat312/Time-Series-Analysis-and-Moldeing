@@ -14,6 +14,7 @@ import seaborn as sns
 ## SKLEARN ##
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
+from sklearn.model_selection import train_test_split
 
 ## SCIPY ##
 from scipy import stats as stats
@@ -23,10 +24,11 @@ from scipy.stats import chi2
 
 ## STATSMODELS ##
 import statsmodels
-from statsmodels.graphics.gofplots import qqplot
-from statsmodels.tsa.stattools import adfuller
 import statsmodels.api as sm
-from sklearn.model_selection import train_test_split
+from statsmodels.tsa.stattools import adfuller, kpss
+from statsmodels.graphics.gofplots import qqplot
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
 import statsmodels.tsa.holtwinters as ets
 from statsmodels.tsa.seasonal import STL
 
@@ -62,7 +64,6 @@ sns.set_style('whitegrid') #ticks
 print("\nSETTINGS ASSIGNED")
 
 #%%
-
 ## ANALYSIS PARAMETERS ##
 start_date = '2000-01-01'
 end_date = '2022-03-31'
@@ -116,7 +117,8 @@ sector_dict = {'apartment': ["EQR",	"AVB",	"ESS",	"MAA",	"UDR",	"CPT",	"AIV",	"B
                'healthcare': ["WELL",	"PEAK",	"VTR",	"OHI", "HR"]}
 
 #%%
-# IMPORT SCRAPED DATA (SECTOR DATAFRAMES)
+# IMPORT DATA (DATAFRAMES BY RE SECTOR)
+all_sectors_import = pd.read_excel(current_folder + 'data/reit_trading_2000_2022.xlsx', sheet_name='ALL SECTORS', parse_dates = True, index_col = [0], header=[3])
 office_import = pd.read_excel(current_folder + 'data/reit_trading_2000_2022.xlsx', sheet_name='OFFICE', parse_dates = True, index_col = [0], header=[2])
 residential_import = pd.read_excel(current_folder + 'data/reit_trading_2000_2022.xlsx', sheet_name='RESIDENTIAL', parse_dates = True, index_col = [0], header=[2])
 lodging_import = pd.read_excel(current_folder + 'data/reit_trading_2000_2022.xlsx', sheet_name='LODGING', parse_dates = True, index_col = [0], header=[2])
@@ -144,18 +146,37 @@ industrial_comps = industrial_import
 self_storage_comps = self_storage_import
 data_center_comps = data_center_import
 
+sector_df_dict = [office_comps, residential_comps,  lodging_comps, net_lease_comps, strip_center_comps,
+                  mall_comps, healthcare_comps, industrial_comps, self_storage_comps, data_center_comps]
+
 print("\nCOPIES SAVED")
 
-#%% [markdown]
-## FTP DATASET ##
-    #     * Source
-    #     * Number of samples
-    #     * Number of features
-    #     * Target variable
-    #     * Plot autocorrelation - stationary or not stationary
-    #     * Rolling mean / variance
-    #     * ADF / KPSS
-    #     * Feature reduction analysis
+#%%
+all_sector_return_df = pd.concat(sector_df_dict)
+# all_sector_return_df = pd.concat(office_comps['AVERAGE_RETURN_1D'], residential_comps['AVERAGE_RETURN_1D'])
+
+print(all_sector_return_df['AVERAGE_RETURN_1D'])
+
+#%%
+print(sector_df_dict[:])
+
+# print(sectors)
+
+
+#%%
+all_sector_returns = pd.DataFrame()
+for i in sector_df_dict:
+    all_sector_returns[f'{i}_AVERAGE_RETURN_1D'] = i['AVERAGE_RETURN_1D']
+
+#%%
+print(all_sector_returns)
+
+
+
+#%%
+
+
+
 
 #%%
 ## AUTO-CORRELATION FUNCTION ##
@@ -168,11 +189,24 @@ print("\nCOPIES SAVED")
 
 
 #%%
-# PLOT
-#fig, axes = plt.subplots(1,1,figsize=(10,8))
-#passengers['#Passengers'].plot(legend=True)
+all_sectors_returns_df = pd.concat(sector_df_dict)
+all_sectors_returns_df
 
-plt.figure(figsize=(10,8))
+
+# for col in sector_df_dict:
+#     if col == ['AVERAGE_RETURN_1D']:
+
+#%%
+print(all_sectors_returns_df.columns)
+
+#%%
+# PLOT
+fig, axes = plt.subplots(2,5,figsize=(16,8))
+# plt.figure(figsize=(10,8))
+
+
+
+
 sns.lineplot(x=passengers['Month'], y=passengers['#Passengers'])
 plt.title("AIR PASSENGERS (1949-1960)")
 plt.xlabel('DATE')
@@ -205,6 +239,63 @@ print(office_col_index)
 #%%
 rolling_mean_var_plots(rolling_mean_var(office_comps_after_2009['AVERAGE_RETURN_1D']), office_col_index)
 
+#%%
+## CORRELATION COEFFICIENT ##
+def correlation_coefficent(x, y):
+    x_mean = np.nanmean(np.array(x))
+    y_mean = np.nanmean(np.array(y))
+    x_r = np.subtract(x, x_mean)
+    y_r = np.subtract(y, y_mean)
+    numerator_xy = np.dot(x_r, y_r)
+    denominator_x = np.nansum((x_r) ** 2)
+    denominator_y = np.nansum((y_r) ** 2)
+    denominator_xy = (denominator_x * denominator_y) ** (1 / 2)
+    if denominator_xy != 0:
+        return round((numerator_xy / denominator_xy), 2)
+    else:
+        return print('DIVIDE BY ZERO')
+
+
+## KPSS TEST ##
+def kpss_test(timeseries):
+    kpss_test = kpss(timeseries, regression='c', nlags='auto')
+    kpss_output = [x for x in kpss_test[0:3]]
+    crit_dict = kpss_test[3]
+    crit_values = list(crit_dict.keys())
+    for x in crit_values:
+        kpss_output.append(crit_dict.get(x))
+    kpss_cols = ['Test Statistic', 'p-value', 'Lags', '10%', '5%', '2.5%', '1%']
+    kpss_dict = {x: y for x, y in zip(kpss_cols, kpss_output)}
+    df = pd.DataFrame.from_dict([kpss_dict])
+    print(kpss_dict)
+    return df
+
+## ADF TEST ##
+def adf_test(x, df):
+    df = df.dropna()
+    result = adfuller(df[x])
+    print("ADF Statistic: %f" % result[0])
+    print('p-value: %f' % result[1])
+    print('Critical Values:')
+    output = [x, result[0], result[1]]
+    for key, value in result[4].items():
+        print('\t%s: %.3f' % (key, value))
+        output.append(value)
+
+    cols = ['Column', 'ADF Statistic', 'p-value', '1% CV', '5% CV', '10% CV']
+    dicta = {x: y for x, y in zip(cols, output)}
+    df = pd.DataFrame(dicta, columns=['Column', 'ADF Statistic', 'p-value', '1% CV', '5% CV', '10% CV'],
+                      index=['Column'])
+    return df
+
+#%%
+## ADF / KPSS STATISTIC ##
+def adf_kpss_statistic(timeseries):
+    adf = adfuller(timeseries)[0]
+    kpss_ = kpss(timeseries, regression='c', nlags="auto")[0]
+    stats = [adf, kpss_]
+    return stats
+
 
 #%%
 ## ADF TEST ##
@@ -214,7 +305,6 @@ print('*'*100)
 
 #%%
 ## KPSS TEST ##
-
 
 print('KPSS - ___:')
 print(kpss_test(office_comps['AVERAGE_RETURN_1D']))
