@@ -158,21 +158,7 @@ print(sector_comps.info())
 print(sector_comps.columns)
 
 #%%
-# all_sector_return_df = pd.concat(sector_df_list)
-# all_sector_return_df = pd.concat(office_comps['AVERAGE_RETURN_1D'], residential_comps['AVERAGE_RETURN_1D'])
-# print(all_sector_return_df['AVERAGE_RETURN_1D'])
-
-
-#%% [markdown]
-
-#%%
-## AUTO-CORRELATION FUNCTION ##
-
-
-#%%
-## AUTO-CORRELATION PLOT ##
-
-#%%
+## VISUALIZATION VARIABLES ##
 sector_return_cols = ['OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN_1D',
                       'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D',
                       'HC_AVG_RETURN_1D', 'IND_AVG_RETURN_1D', 'SS_AVG_RETURN_1D',
@@ -183,18 +169,30 @@ sector_returns = sector_comps[sector_return_cols]
 print(sector_returns.info())
 print(sector_returns.columns)
 
+#%% [markdown]
+### TIME SERIES ANALYSIS ###
+    ## ROLLING MEAN / VARIANCE
+    ## ADF TEST
+    ## KPSS TEST
+    ##
+
 #%%
-# labels = sector_returns.columns
-# print(labels)
+## AUTO-CORRELATION FUNCTION ##
 
 
 #%%
-# PLOT
+## AUTO-CORRELATION PLOT ##
+
+
+
+
+#%%
+## TIME SERIES PLOT ##
 fig, axes = plt.subplots(1,1,figsize=(12,8))
 # plt.figure(figsize=(10,8))
 
 for i in sector_returns.columns:
-    sns.lineplot(x=sector_returns.index, y=sector_returns[i], hue=sector_returns[i], legend='full') #['ALL_AVG_RETURN_1D']
+    sns.lineplot(x=sector_returns.index, y=sector_returns[i], legend='full') #hue=sector_returns[i], #['ALL_AVG_RETURN_1D']
 plt.title('1-DAY PRICE RETURN (%) (1/2000-6/2022)')
 plt.xlabel('DATE')
 plt.ylabel('1-DAY PRICE RETURN (%)')
@@ -206,11 +204,22 @@ plt.show()
 
 #%%
 ## TIME SERIES STATISTICS ##
+
 print(f'MEAN: {sector_returns.OFF_AVG_RETURN_1D.mean()}')
 print('*'*100)
 print(f'VARIANCE: {sector_returns.OFF_AVG_RETURN_1D.var()}')
 print('*'*100)
 print(f'STD DEV: {sector_returns.OFF_AVG_RETURN_1D.std()}')
+
+#%%
+## TIME SERIES STATISTICS ##
+for i in sector_return_cols:
+    print({i})
+    print(f'MEAN: {sector_returns.i.mean()}')
+    print('*' * 100)
+    print(f'VARIANCE: {sector_returns.i.var()}')
+    print('*' * 100)
+    print(f'STD DEV: {sector_returns.i.std()}')
 
 
 #%%
