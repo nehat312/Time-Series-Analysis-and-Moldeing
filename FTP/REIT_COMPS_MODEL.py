@@ -2,6 +2,16 @@
 
 ## REIT TRADING COMPS ##
 
+#%% [markdown]
+### **ANALYSIS SECTORS:**
+
+# * Analysis evaluates publicly traded REIT tickers, within the commercial RE sectors outlined below:
+    #     * Retail - Strip Centers, Malls, Triple-Net Retail (NNN)
+    #     * Multifamily - Rental Apartments
+    #     * Office - Central Business District (CBD), Suburban (SUB)
+    #     * Hospitality - Full-Service Hotels, Limited-Service Hotels
+    #     * Industrial - Warehouse, Logistics
+
 #%%
 ## LIBRARY IMPORTS ##
 
@@ -15,6 +25,8 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
 
 ## SCIPY ##
 from scipy import stats as stats
@@ -28,12 +40,28 @@ import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller, kpss
 from statsmodels.graphics.gofplots import qqplot
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-
 import statsmodels.tsa.holtwinters as ets
 from statsmodels.tsa.seasonal import STL
+from statsmodels.tsa.api import SARIMAX, AutoReg
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+## TENSORFLOW / KERAS ##
+import tensorflow as tf
+from tensorflow import keras
+from keras.layers import Dense
+from keras.layers import LSTM
+from keras import Sequential
+from keras import preprocessing
+# from keras.preprocessing.sequence import TimeseriesGenerator
+# from keras.preprocessing.timeseries import timeseries_dataset_from_array
 
 ## SUPPLEMENTAL ##
 from numpy import linalg
+from numpy import linalg as LA
+
+## WARNINGS ##
+import warnings
+warnings.filterwarnings('ignore')
 
 ## TOOLBOX ##
 from toolbox import *
@@ -52,14 +80,18 @@ print("\nIMPORT SUCCESS")
 #%%
 ## FOLDER CONFIGURATION ##
 
-## CURRENT FOLDER / PATH
+# CURRENT FOLDER / PATH
 current_folder = '/Users/nehat312/GitHub/Time-Series-Analysis-and-Moldeing/FTP/'
 
 print("\nDIRECTORY CONFIGURED")
 
 #%%
-## VISUAL SETTINGS
+## VISUAL SETTINGS ##
 sns.set_style('whitegrid') #ticks
+
+desired_width = 320
+pd.set_option('display.width', desired_width)
+pd.set_option('display.max_columns', 10)
 
 print("\nSETTINGS ASSIGNED")
 
@@ -105,16 +137,26 @@ reit_tickers = ["EQR",	"AVB",	"ESS",	"MAA",	"UDR",	"CPT",	"AIV",	"BRG", "APTS",
 print("\nVARIABLES ASSIGNED")
 
 #%%
-sector_dict = {'apartment': ["EQR",	"AVB",	"ESS",	"MAA",	"UDR",	"CPT",	"AIV",	"BRG", "APTS"],
-               'office': ["BXP",	"VNO",	"KRC", "DEI", "JBGS",	"CUZ", "HPP",	"SLG",	"HIW", "OFC", "PGRE",	"PDM", "WRE",	"ESRT",	"BDN", "EQC", "VRE"],
-               'hotel': ["HST",	"RHP",	"PK",	"APLE",	"SHO",	"PEB",	"RLJ", "DRH",	"INN", "HT", "AHT",	"BHR"],
-               'mall': ["SPG", "MAC", "PEI"],
-               'strip_center': ["REG", "FRT",	"KIM",	"BRX",	"AKR",	"UE",	"ROIC",	"CDR",	"SITC",	"BFS"],
-               'net_lease': ["O",	"WPC",	"NNN",	"STOR",	"SRC",  "PINE", "FCPT", "ADC", "EPRT"],
-               'industrial': ["PLD", "DRE",	"FR",	"EGP"],
-               'self_storage': ["EXR",	"CUBE",	"REXR",	"LSI"],
-               'data_center': ["EQIX", "DLR" "AMT"],
-               'healthcare': ["WELL",	"PEAK",	"VTR",	"OHI", "HR"]}
+## INITIALIZE LISTS TO STORE MODEL RESULTS ##
+model_name = []
+model_mse = []
+model_ljb = []
+model_error_var = []
+model_notes = []
+
+print("\nLISTS INITIALIZED")
+
+#%%
+# sector_dict = {'apartment': ["EQR",	"AVB",	"ESS",	"MAA",	"UDR",	"CPT",	"AIV",	"BRG", "APTS"],
+#                'office': ["BXP",	"VNO",	"KRC", "DEI", "JBGS",	"CUZ", "HPP",	"SLG",	"HIW", "OFC", "PGRE",	"PDM", "WRE",	"ESRT",	"BDN", "EQC", "VRE"],
+#                'hotel': ["HST",	"RHP",	"PK",	"APLE",	"SHO",	"PEB",	"RLJ", "DRH",	"INN", "HT", "AHT",	"BHR"],
+#                'mall': ["SPG", "MAC", "PEI"],
+#                'strip_center': ["REG", "FRT",	"KIM",	"BRX",	"AKR",	"UE",	"ROIC",	"CDR",	"SITC",	"BFS"],
+#                'net_lease': ["O",	"WPC",	"NNN",	"STOR",	"SRC",  "PINE", "FCPT", "ADC", "EPRT"],
+#                'industrial': ["PLD", "DRE",	"FR",	"EGP"],
+#                'self_storage': ["EXR",	"CUBE",	"REXR",	"LSI"],
+#                'data_center': ["EQIX", "DLR" "AMT"],
+#                'healthcare': ["WELL",	"PEAK",	"VTR",	"OHI", "HR"]}
 
 #%%
 # IMPORT DATA (DATAFRAMES BY RE SECTOR)
@@ -159,31 +201,36 @@ print(sector_comps.columns)
 
 #%%
 ## VISUALIZATION VARIABLES ##
-sector_return_cols = ['OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN_1D',
-                      'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D',
-                      'HC_AVG_RETURN_1D', 'IND_AVG_RETURN_1D', 'SS_AVG_RETURN_1D',
-                      'DC_AVG_RETURN_1D', 'ALL_AVG_RETURN_1D']
+sector_return_cols = ['ALL_AVG_RETURN_1D', 'OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN_1D',
+                      'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D', 'HC_AVG_RETURN_1D',
+                      'IND_AVG_RETURN_1D', 'SS_AVG_RETURN_1D', 'DC_AVG_RETURN_1D']
+
+sector_close_cols = ['ALL_AVG_CLOSE', 'OFF_AVG_CLOSE', 'RESI_AVG_CLOSE', 'HOT_AVG_CLOSE',
+                     'NL_AVG_CLOSE', 'SC_AVG_CLOSE', 'MALL_AVG_CLOSE', 'HC_AVG_CLOSE',
+                     'IND_AVG_CLOSE', 'SS_AVG_CLOSE', 'DC_AVG_CLOSE', ]
 
 sector_returns = sector_comps[sector_return_cols]
+sector_close = sector_comps[sector_close_cols]
 
 print(sector_returns.info())
-print(sector_returns.columns)
+# print(sector_returns.columns)
+
+#%%
+# REFINE START DATE (ITERATIVE PROCESS)
+
+# new_start_date = '1/1/2004' #'7/1/2009' #'4/1/2009' #'1/2/2009'
+#
+# sector_returns = sector_returns[sector_returns.index >= new_start_date]
+# print(sector_returns.info())
+
 
 #%% [markdown]
 ### TIME SERIES ANALYSIS ###
+    ## TIME SERIES STATISTICS
     ## ROLLING MEAN / VARIANCE
     ## ADF TEST
     ## KPSS TEST
-    ##
-
-#%%
-## AUTO-CORRELATION FUNCTION ##
-
-
-#%%
-## AUTO-CORRELATION PLOT ##
-
-
+    ## AUTOCORRELATION
 
 
 #%%
@@ -201,183 +248,180 @@ plt.tight_layout(pad=1)
 plt.legend(loc='best')
 plt.show()
 
+#%%
+print(sector_returns.columns)
+
+# 'OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN_1D', 'NL_AVG_RETURN_1D',
+# 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D', 'HC_AVG_RETURN_1D', 'IND_AVG_RETURN_1D',
+# 'SS_AVG_RETURN_1D', 'DC_AVG_RETURN_1D', 'ALL_AVG_RETURN_1D'
 
 #%%
-## TIME SERIES STATISTICS ##
 
-print(f'MEAN: {sector_returns.OFF_AVG_RETURN_1D.mean()}')
-print('*'*100)
-print(f'VARIANCE: {sector_returns.OFF_AVG_RETURN_1D.var()}')
-print('*'*100)
-print(f'STD DEV: {sector_returns.OFF_AVG_RETURN_1D.std()}')
+#%%
+plt.figure(figsize=(16,12))
+plt.subplot(1,1,1)
+sns.lineplot(x=sector_returns.index, y=sector_returns, hue=sector_returns, palette='mako') #['ALL_AVG_RETURN_1D']
+plt.title('ALL SECTORS: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+# plt.legend(loc='best')
+
+plt.show()
+
+#%%
+plt.figure(figsize=(16,12))
+plt.subplot(5,2,1)
+sns.lineplot(x=sector_returns.index, y=sector_returns['ALL_AVG_RETURN_1D'], palette='mako')
+plt.title('ALL SECTORS: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+plt.subplot(5,2,2)
+sns.lineplot(x=sector_returns.index, y=sector_returns['OFF_AVG_RETURN_1D'], palette='flare')
+plt.title('OFFICE: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+plt.subplot(5,2,3)
+sns.lineplot(x=sector_returns.index, y=sector_returns['RESI_AVG_RETURN_1D'], palette='maroon')
+plt.title('RESIDENTIAL: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+plt.subplot(5,2,4)
+sns.lineplot(x=sector_returns.index, y=sector_returns['HOT_AVG_RETURN_1D'])
+plt.title('LODGING: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+plt.subplot(5,2,5)
+sns.lineplot(x=sector_returns.index, y=sector_returns['NL_AVG_RETURN_1D'])
+plt.title('NET LEASE: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+plt.subplot(5,2,6)
+sns.lineplot(x=sector_returns.index, y=sector_returns['SC_AVG_RETURN_1D'])
+plt.title('STRIP CENTER: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+plt.subplot(5,2,7)
+sns.lineplot(x=sector_returns.index, y=sector_returns['MALL_AVG_RETURN_1D'])
+plt.title('MALL: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+plt.subplot(5,2,8)
+sns.lineplot(x=sector_returns.index, y=sector_returns['HC_AVG_RETURN_1D'])
+plt.title('HEALTHCARE: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+plt.subplot(5,2,9)
+sns.lineplot(x=sector_returns.index, y=sector_returns['IND_AVG_RETURN_1D'])
+plt.title('INDUSTRIAL: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+
+plt.subplot(5,2,10)
+sns.lineplot(x=sector_returns.index, y=sector_returns['DC_AVG_RETURN_1D'], palette='mako')
+plt.title('DATA CENTER: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+
+# plt.legend(loc='best')
+
+plt.show()
+
+#%%
+# for col in sector_returns.columns:
+#     for i in range(1,6,1):
+#         for j in range(1,3,1):
+
 
 #%%
 ## TIME SERIES STATISTICS ##
 for i in sector_return_cols:
-    print({i})
-    print(f'MEAN: {sector_returns.i.mean()}')
-    print('*' * 100)
-    print(f'VARIANCE: {sector_returns.i.var()}')
-    print('*' * 100)
-    print(f'STD DEV: {sector_returns.i.std()}')
-
-
-#%%
-# FILTER START DATE
-new_start_date = '7/1/2009' #'4/1/2009' #'1/2/2009'
-
-sector_returns_range = sector_returns[sector_returns.index >= new_start_date]
-sector_returns_range
-
-# office_comps_after_2009 = office_comps[office_comps.index >= new_start_date]
-# office_comps_after_2009
+    print(f'{i}:')
+    print(f'MEAN: {sector_returns[i].mean():.4f}')
+    print(f'VARIANCE: {sector_returns[i].var():.4f}')
+    print(f'STD DEV: {sector_returns[i].std():.4f}')
+    print('*' * 25)
 
 #%%
 ## ROLLING MEAN / VARIANCE ##
-# SET COLUMN INDICES FOR CHART TITLES
-office_col_index = office_comps_after_2009.columns[33].upper() #16
-print(office_col_index)
+
+# fig, axes = plt.subplots(5, 2, figsize=(12, 8))
+
+for i in sector_returns.columns:
+    rolling_mean_var_plots(rolling_mean_var(sector_returns[i]), i)
+#rolling_mean_var_plots(rolling_mean_var(df_2[0]), df_2_index)
+
+plt.show()
+
 
 #%%
-rolling_mean_var_plots(rolling_mean_var(office_comps_after_2009['AVERAGE_RETURN_1D']), office_col_index)
+## AUTO-CORRELATION FUNCTION ##
+
+acf_stemplot(0, acf_df(y, 20), 20)
+
 
 #%%
-## CORRELATION COEFFICIENT ##
-def correlation_coefficent(x, y):
-    x_mean = np.nanmean(np.array(x))
-    y_mean = np.nanmean(np.array(y))
-    x_r = np.subtract(x, x_mean)
-    y_r = np.subtract(y, y_mean)
-    numerator_xy = np.dot(x_r, y_r)
-    denominator_x = np.nansum((x_r) ** 2)
-    denominator_y = np.nansum((y_r) ** 2)
-    denominator_xy = (denominator_x * denominator_y) ** (1 / 2)
-    if denominator_xy != 0:
-        return round((numerator_xy / denominator_xy), 2)
-    else:
-        return print('DIVIDE BY ZERO')
+## AUTO-CORRELATION PLOT ##
 
 
-## KPSS TEST ##
-def kpss_test(timeseries):
-    kpss_test = kpss(timeseries, regression='c', nlags='auto')
-    kpss_output = [x for x in kpss_test[0:3]]
-    crit_dict = kpss_test[3]
-    crit_values = list(crit_dict.keys())
-    for x in crit_values:
-        kpss_output.append(crit_dict.get(x))
-    kpss_cols = ['Test Statistic', 'p-value', 'Lags', '10%', '5%', '2.5%', '1%']
-    kpss_dict = {x: y for x, y in zip(kpss_cols, kpss_output)}
-    df = pd.DataFrame.from_dict([kpss_dict])
-    print(kpss_dict)
-    return df
 
+
+
+#%%
 ## ADF TEST ##
-def adf_test(x, df):
-    df = df.dropna()
-    result = adfuller(df[x])
-    print("ADF Statistic: %f" % result[0])
-    print('p-value: %f' % result[1])
-    print('Critical Values:')
-    output = [x, result[0], result[1]]
-    for key, value in result[4].items():
-        print('\t%s: %.3f' % (key, value))
-        output.append(value)
-
-    cols = ['Column', 'ADF Statistic', 'p-value', '1% CV', '5% CV', '10% CV']
-    dicta = {x: y for x, y in zip(cols, output)}
-    df = pd.DataFrame(dicta, columns=['Column', 'ADF Statistic', 'p-value', '1% CV', '5% CV', '10% CV'],
-                      index=['Column'])
-    return df
-
-#%%
-## ADF / KPSS STATISTIC ##
-def adf_kpss_statistic(timeseries):
-    adf = adfuller(timeseries)[0]
-    kpss_ = kpss(timeseries, regression='c', nlags="auto")[0]
-    stats = [adf, kpss_]
-    return stats
-
-
-#%%
-## ADF TESTS ##
-print(f'ADF TEST - ALL SECTORS')
-print(adf_test(['ALL_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - OFFICE')
-print(adf_test(['OFF_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - RESIDENTIAL')
-print(adf_test(['RESI_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - LODGING')
-print(adf_test(['HOT_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - NET LEASE')
-print(adf_test(['NL_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - STRIP CENTER')
-print(adf_test(['SC_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - MALL')
-print(adf_test(['MALL_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - HEALTH CARE')
-print(adf_test(['HC_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - INDUSTRIAL')
-print(adf_test(['IND_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - SELF STORAGE')
-print(adf_test(['SS_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-print(f'ADF TEST - DATA CENTER')
-print(adf_test(['DC_AVG_RETURN_1D'], sector_returns))
-print('*'*100)
-
-
-    #%%
-## ADF TEST ##
-
-    print(f'ADF TEST - {col}:')
-    print(adf_test(['AVERAGE_RETURN_1D'], sector_returns))
-    print('*'*100)
+for a in sector_return_cols:
+    print(f'ADF TEST - {a}:')
+    print(adf_test([a], sector_returns))
+    print('*' * 100)
 
 #%%
 ## KPSS TEST ##
-
-print(f'KPSS TEST - ___:')
-print(kpss_test(office_comps['AVERAGE_RETURN_1D']))
-print('*'*100)
-
-#%%
-## FEATURE REDUCTION ANALYSIS ##
+for k in sector_return_cols:
+    print(f'KPSS TEST - {k}:')
+    print(kpss_test(sector_returns[k]))
+    print('*'*150)
 
 
 #%%
 ## PRINCIPAL COMPONENT ANALYSIS ##
 
 numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
-reit_num_cols = reit_comps.select_dtypes(include=numerics)
+reit_num_cols = sector_returns.select_dtypes(include=numerics)
 reit_num_cols.info()
-
+# reit_num_cols = reit_num_cols.dropna(inplace=True)
 
 #%%
 X = reit_num_cols[reit_num_cols._get_numeric_data().columns.to_list()[:-1]]
-Y = reit_num_cols['earningBeforeInterestTaxes'] # earningBeforeInterestTaxes
+Y = reit_num_cols['ALL_AVG_RETURN_1D']
 print(X.describe())
 
 #%%
-# reit_num_cols = reit_num_cols.dropna(inplace=True)
-
-
-#%%
+## SCALING DATA ##
 X = StandardScaler().fit_transform(X)
-
 
 #%%
 ## PCA STATISTICS ##
-pca = PCA(n_components='mle', svd_solver='full') # 'mle'
+pca = PCA(n_components=4, svd_solver='full') # 'mle'
 pca.fit(X)
 X_PCA = pca.transform(X)
 
@@ -393,17 +437,15 @@ x = np.arange(1, len(np.cumsum(pca.explained_variance_ratio_))+1, 1)
 
 plt.figure(figsize=(12,8))
 plt.plot(x, np.cumsum(pca.explained_variance_ratio_))
+plt.title('PCA - EXPLAINED VARIANCE RATIO', fontsize=18)
+plt.xlabel('PCA COMPONENT #', fontsize=16)
+plt.ylabel('EXPLAINED VARIANCE %', fontsize=16)
 plt.xticks(x)
-#plt.grid()
+plt.tight_layout(pad=1)
 plt.show()
-
 
 #%%
 ## SINGULAR VALUE DECOMPOSITION ANALYSIS [SVD] ##
-    # CONDITION NUMBER
-    # ORIGINAL DATA
-
-from numpy import linalg as LA
 
 H = np.matmul(X.T, X)
 _, d, _ = np.linalg.svd(H)
@@ -422,50 +464,578 @@ print(f'TRANSFORMED DATA: CONDITIONAL NUMBER\n {LA.cond(X_PCA)}')
 #%%
 # CONSTRUCTION OF REDUCED DIMENSION DATASET
 
-#pca_df = pca.explained_variance_ratio_
-
 a, b = X_PCA.shape
 column = []
+#pca_df = pca.explained_variance_ratio_
 
 for i in range(b):
     column.append(f'PRINCIPAL COLUMN {i+1}')
 
-df_PCA = pd.DataFrame(data=X_PCA, columns=column)
+df_PCA = pd.DataFrame(data=X_PCA, columns=column, index=sector_returns.index)
 df_PCA = pd.concat([df_PCA, Y], axis=1)
 
-df_PCA.info()
-
+#%%
+print(df_PCA.info())
+print('*'*50)
+print(df_PCA.head())
+print('*'*50)
+print(df_PCA.describe())
 
 #%%
-
-
-
-#%%
-
-
-
-
-
-#%%
-### DATA VIZ ###
-
-#%%
-#fig, axes = plt.subplots(nrows=2, ncols=3, sharex=True, figsize=(12,8))
+## PCA PLOT ALTERNATE ##
 plt.figure(figsize=(12,8))
-sns.lineplot(data=reit_comps,
-             x='calendarDate',
-             y='debt',   #netIncome. ## EBIT/Share #'operatingIncome' 'operatingExpense'
-             hue='sector',
-             style='sector',
-             palette='mako')
-
-plt.title('REIT _____ (2010-2022)')
-plt.xlabel('DATE')
-plt.ylabel(f'_____')
+sns.lineplot(data=df_PCA, palette='mako', legend='brief')
+plt.legend(loc='best')
 plt.tight_layout(pad=1)
-#plt.grid()
+plt.show()
+
+#%%
+## STL DECOMPOSITION ##
+stl_data = sector_returns['ALL_AVG_RETURN_1D'].copy()
+# stl_data.index = [i for i in range(stl_data.shape[0])]
+stl_data.index = sector_returns.index
+stl_res = STL(stl_data, period=12).fit()
+
+#%%
+## STL DECOMPOSITION PLOT ##
+plt.figure(figsize=(12,8))
+fig = stl_res.plot()
+plt.xlabel('DATE', fontsize=12)
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## STL DECOMPOSITION T/S/R ##
+T = stl_res.trend
+S = stl_res.seasonal
+R = stl_res.resid
+
+#%%
+## STRENGTH OF TREND ##
+def strength_of_trend(residual, trend):
+    var_resid = np.nanvar(residual)
+    var_resid_trend = np.nanvar(np.add(residual, trend))
+    return 1 - (var_resid / var_resid_trend)
+
+F = np.maximum(0, 1-np.var(R)/np.var(np.array(T)+np.array(R)))
+
+print(f'STRENGTH OF TREND: {100*F:.3f}% or {strength_of_trend(R, T):.5f}')
+
+#%%
+## STRENGTH OF SEASONAL ##
+def strength_of_seasonal(residual, seasonal):
+    var_resid = np.nanvar(residual)
+    var_resid_seasonal = np.nanvar(np.add(residual, seasonal))
+    return 1 - (var_resid / var_resid_seasonal)
+
+F = np.maximum(0, 1-np.var(R)/np.var(np.array(S)+np.array(R)))
+
+print(f'STRENGTH OF SEASONALITY: {100*F:.3f}% or {strength_of_seasonal(R, S):.5f}')
+
+#%%
+adjusted_seasonal = np.subtract(np.array(sector_returns.ALL_AVG_RETURN_1D), np.array(stl_res.seasonal))
+detrended = np.subtract(np.array(sector_returns.ALL_AVG_RETURN_1D), np.array(stl_res.trend))
+residual = np.array(stl_res.resid)
+
+#%%
+plt.figure(figsize=(12,8))
+plt.plot(sector_returns.index, sector_returns.ALL_AVG_RETURN_1D, label='ORIGINAL DATA', color='dodgerblue')
+plt.plot(sector_returns.index, adjusted_seasonal, label='ADJUSTED SEASONAL', color='yellow')
+# plt.plot(sector_returns.index, detrended, label='DETRENDED', color='gray')
+plt.title('SEASONALLY ADJUSTED DATA VS. ORIGINAL')
+plt.xlabel('DATE')
+plt.ylabel('')
+# plt.xticks(sector_returns.index, fontsize=10) #[::4500]
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+plt.figure(figsize=(12,8))
+plt.plot(sector_returns.index, sector_returns.ALL_AVG_RETURN_1D, label='ORIGINAL DATA', color='dodgerblue')
+plt.plot(sector_returns.index, detrended, label='DETRENDED')
+
+plt.title('DETRENDED VS. ORIGINAL')
+plt.xlabel('DATE')
+plt.ylabel('')
+# plt.xticks(sector_returns.index, fontsize=10) #[::4500]
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## VARIANCE INFLATION FACTORS ##
+X = sector_returns[['OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D',
+                    'HOT_AVG_RETURN_1D',
+                    'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D',
+                    'IND_AVG_RETURN_1D',
+                    'HC_AVG_RETURN_1D', 'SS_AVG_RETURN_1D',
+                     'DC_AVG_RETURN_1D'
+                    ]] #'ALL_AVG_RETURN_1D',
+
+# VIF DATAFRAME
+VIF_data = pd.DataFrame()
+VIF_data['FEATURE'] = X.columns
+
+# CALCULATING VIF FOR EACH FEATURE
+VIF_data['VIF'] = [variance_inflation_factor(X.values, i) for i in range(len(X.columns))]
+VIF_data = VIF_data.sort_values(by='VIF', ascending=False)
+
+print(VIF_data)
+
+#%% [markdown]
+## FEATURE SELECTION ##
+# To reduce multicollinearity from all forward models, searching for any variables which may hold correlation.
+# Variance inflation factor package will assist in identifying signs of multicollinearity in the data set.
+# Observations:
+    # Office + Residential 1-Day Average Stock Price Returns appear to be exhibit multicollinearity
+    # Defensive sectors (Healthcare, Industrial, Self-Storage) share slight multicollinearity
+    # Data Center sector appears largely uncorrelated to others - candidate for seasonal?
+    # Lodging sector appears largely uncorrelated to others - candidate for seasonal?
+
+#%%
+## MULTIPLE LINEAR REGRESSION ##
+
+# ASSIGN TARGET VARIABLES
+X_features = sector_returns[['HOT_AVG_RETURN_1D', 'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'DC_AVG_RETURN_1D']]
+X = X_features
+y = sector_returns['ALL_AVG_RETURN_1D']
+
+# X_features = sector_close
+# X = sector_close
+# y = sector_close['ALL_AVG_CLOSE']
+
+print(f"X:", X.shape)
+print(f"y:", y.shape)
+
+#%%
+# TRAIN / TEST - SPLIT
+X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False, test_size=0.2, random_state=42)
+print(f"X_train:", X_train.shape)
+print(f"y_train:", y_train.shape)
+print(f"X_test:", X_test.shape)
+print(f"y_test:", y_test.shape)
+
+#%%
+### OLS MODEL ###
+X_train_OLS = sm.add_constant(X_train)
+OLS_model = sm.OLS(y_train, X_train_OLS)
+OLS_fit = OLS_model.fit()
+print(OLS_fit.summary())
+
+#%%
+## OLS COEFFICIENTS / AIC / BIC / R^2 ##
+OLS_coefficients = OLS_fit.params
+initial_aic_bic_rsquared = aic_bic_rsquared_df(OLS_fit)
+print(OLS_coefficients)
+print('*' * 50)
+print(initial_aic_bic_rsquared)
+
+#%%
+## ALTERNATE REGRESSION ##
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+print(f"LR TRAIN: {round(lr.score(X_train, y_train), 4)}")
+print(f"LR TEST: {round(lr.score(X_test, y_test), 4)}")
+
+#%%
+## BASE MODEL FUNCTIONS ##
+def one_step_average_method(x):
+    x = []
+    for i in range(1,len(x)):
+        m = np.mean(np.array(x[0:i]))
+        x.append(m)
+    return x
+
+def h_step_average_method(train, test):
+    forecast = np.mean(train)
+    predictions = []
+    for i in range(len(test)):
+        predictions.append(forecast)
+    return predictions
+
+def one_step_naive_method(x):
+    forecast = []
+    for i in range(len(x)-1):
+        forecast.append(x[i])
+    return forecast
+
+def h_step_naive_method(test,train):
+    forecast = [test[-1] for i in range (len(train))]
+    return forecast
+
+def SES_train(yt,alpha, initial=430):
+    prediction = [initial]
+    for i in range(1,len(yt)):
+        s= alpha*yt[i-1] + (1-alpha)*prediction[i-1]
+        prediction.append(s)
+    return prediction
+
+def one_step_drift_method(x):
+    forecast =[]
+    for i in range(1,len(x)-1):
+        prediction = x[i]+(x[i]-x[0])/i
+        forecast.append(prediction)
+    forecast = [x[0]] + forecast
+    return forecast
+
+def h_step_drift_method(train,test):
+    forecast = []
+    prediction = (train[-1] - train[0]) / (len(train)-1)
+    for i in range(1,len(test) + 1):
+        forecast.append(train[-1]+ i*prediction)
+    return forecast
+
+#%%
+## TRAIN / TEST - SPLIT ##
+split_80 = int(len(sector_returns)*0.8)
+split_20 = int(len(sector_returns)-split_80)
+df_train = sector_returns[:split_80]
+df_test = sector_returns[split_80:]
+
+print(f'DF_TRAIN:', df_train.shape)
+print(f'DF_TEST:', df_test.shape)
+
+#%%
+## AVERAGE METHOD ##
+average_method = h_step_average_method(df_train['ALL_AVG_RETURN_1D'], df_test['ALL_AVG_RETURN_1D'])
+
+#%%
+## PLOT TRAIN VS TEST ##
+plt.figure()
+plt.plot(df_train.index, df_train.ALL_AVG_RETURN_1D, label='TRAIN DATA', color='green')
+plt.plot(df_test.index, df_test.ALL_AVG_RETURN_1D, label='TEST DATA', color='dodgerblue')
+plt.plot(df_test.index, average_method, label='AVERAGE METHOD', color='yellow')
+plt.title('AVERAGE METHOD ON STOCK PRICE RETURN % (1-DAY)')
+plt.xlabel('DATE')
+plt.ylabel('STOCK PRICE RETURN % (1-DAY)')
+plt.xticks(sector_returns.index[::150], fontsize=8, rotation=90)
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## PLOT TEST ##
+plt.figure()
+plt.plot(df_test.index, df_test.ALL_AVG_RETURN_1D, label='TEST DATA', color='green')
+plt.plot(df_test.index, average_method, label='AVERAGE METHOD', color='yellow')
+plt.title('AVERAGE METHOD ON STOCK PRICE RETURN % (1-DAY)')
+plt.xlabel('DATE')
+plt.ylabel('STOCK PRICE RETURN % (1-DAY)')
+plt.xticks(df_test.index[::30], fontsize=8, rotation=90)
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+prediction, forecast = average_prediction(df_train['ALL_AVG_RETURN_1D'], len(sector_returns))
+
+#%%
+## AVERAGE METHOD ERROR ##
+one_step_predict = np.array(prediction)
+yarray = np.array(df_train.ALL_AVG_RETURN_1D[1:])
+avg_yt_error = np.subtract(one_step_predict[2:], yarray)
+avg_yf_error = np.array(df_test.ALL_AVG_RETURN_1D) - np.array(average_method)
+
+## AVERAGE METHOD STATISTICS ##
+print(f'TRAIN MSE - AVERAGE METHOD: {mse(avg_yt_error).round(4)}')
+print(f'TEST MSE - AVERAGE METHOD: {mse(avg_yf_error).round(4)}')
+
+print(f'ERROR VARIANCE - AVERAGE METHOD: {np.var(avg_yt_error)}')
+print(f'ERROR MEAN - AVERAGE METHOD: {np.mean(avg_yf_error)}')
+print(f'RMSE - AVERAGE METHOD: {mean_squared_error(df_test.ALL_AVG_RETURN_1D, np.array(average_method), squared=False)}')
+
+#%%
+## AVERAGE METHOD STEMPLOT ##
+# stem_acf('Average-Error-ACF', acf_df(avg_yf_error, 12), len(df_train))
+
+#%%
+## RECORD MODEL RESULTS ##
+model_name.append('AVERAGE-METHOD')
+model_mse.append(mse(avg_yt_error).round(4))
+model_ljb.append(sm.stats.acorr_ljungbox(avg_yt_error, lags=[5], boxpierce=True).iat[0,0])
+model_error_var.append(np.var(avg_yt_error))
+# model_notes.append('Slightly better')
+
+#%%
+## NAIVE METHOD ##
+naive_predict = h_step_naive_method(df_train.ALL_AVG_RETURN_1D, df_test.ALL_AVG_RETURN_1D)
+
+#%%
+## PLOT TRAIN VS TEST ##
+plt.figure()
+plt.plot(df_train.index, df_train.ALL_AVG_RETURN_1D, label='TRAIN DATA', color='dodgerblue')
+plt.plot(df_test.index, df_test.ALL_AVG_RETURN_1D, label='TEST DATA', color='green')
+plt.plot(df_test.index, naive_predict, label='NAIVE METHOD', color='yellow')
+plt.title('NAIVE METHOD ON STOCK PRICE RETURN % (1-DAY)')
+plt.xlabel('DATE')
+plt.ylabel('STOCK PRICE RETURN % (1-DAY)')
+plt.xticks(sector_returns.index[::150], rotation=90, fontsize=10)
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## PLOT TEST ##
+plt.figure()
+plt.plot(df_test.index, df_test.ALL_AVG_RETURN_1D, label='TEST DATA', color='green')
+plt.plot(df_test.index, naive_predict, label='NAIVE METHOD', color='yellow')
+plt.title('NAIVE METHOD ON STOCK PRICE RETURN % (1-DAY)')
+plt.xlabel('DATE')
+plt.ylabel('STOCK PRICE RETURN % (1-DAY)')
+plt.xticks(df_test.index[::30], rotation=90, fontsize=10)
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## NAIVE METHOD ERROR ##
+naive_error = np.array(df_train.ALL_AVG_RETURN_1D[1:]) - np.array(one_step_naive_method(df_train.ALL_AVG_RETURN_1D))
+print(f'TRAIN MSE - NAIVE METHOD: {mse(naive_error).round(4)}')
+N_yf_error = np.array(df_test.ALL_AVG_RETURN_1D) - np.array(naive_predict)
+print(f'TEST MSE - NAIVE METHOD: {mse(naive_error).round(4)}')
+
+#%%
+## NAIVE METHOD STATISTICS ##
+print(f'ERROR VARIANCE - NAIVE METHOD: {np.var(naive_error)}')
+print(f'ERROR MEAN - NAIVE METHOD: {np.mean(naive_error)}')
+print(f'RMSE - NAIVE METHOD: {mean_squared_error(df_test.ALL_AVG_RETURN_1D, np.array(naive_predict), squared=False)}')
+
+#%%
+## NAIVE METHOD STATISTICS ##
+print(sm.stats.acorr_ljungbox(N_yf_error, lags=[5], boxpierce=True, return_df=True))
+print('PREDICTION ERROR VARIANCE APPEARS LESS THAN FORECAST ERROR VARIANCE')
+
+#%%
+## NAIVE METHOD STEMPLOT ##
+# stem_acf('Stem-ACF-Naive-Err', acf_df(naive_error, 90), len(df_train))
+
+#%%
+## RECORD MODEL RESULTS ##
+model_name.append('NAIVE-METHOD')
+model_mse.append(mse(naive_error).round(4))
+model_ljb.append(sm.stats.acorr_ljungbox(naive_error,lags=[5], boxpierce=True).iat[0,0])
+model_error_var.append(np.var(naive_error))
+# model_notes.append('SLIGHTLY BETTER')
+
+#%%
+## DRIFT METHOD ##
+one_step_predict = one_step_drift_method(df_train.ALL_AVG_RETURN_1D)
+h_step_predict = h_step_drift_method(df_train.ALL_AVG_RETURN_1D, df_test.ALL_AVG_RETURN_1D)
+
+#%%
+## PLOT TRAIN VS TEST ##
+plt.figure()
+plt.plot(df_train.index, df_train.ALL_AVG_RETURN_1D, label='TRAIN DATA', color='dodgerblue')
+plt.plot(df_test.index, df_test.ALL_AVG_RETURN_1D, label='TEST DATA', color='green')
+plt.plot(df_test.index, one_step_predict[len(df_train)-len(df_test)-1:], label='DRIFT METHOD', color='yellow')
+plt.title('DRIFT METHOD ON STOCK PRICE RETURN % (1-DAY)')
+plt.xlabel('DATE')
+plt.ylabel('STOCK PRICE RETURN % (1-DAY)')
+plt.xticks(sector_returns.index[::150], rotation=90, fontsize=10)
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## PLOT TEST ##
+plt.figure()
+plt.plot(df_test.index, df_test.ALL_AVG_RETURN_1D, label='TEST DATA', color='green')
+plt.plot(df_test.index, one_step_predict[len(df_train)-len(df_test)-1:], label='DRIFT METHOD', color='yellow')
+plt.xticks(df_test.index[::30], rotation=90, fontsize=10)
+plt.xlabel('DATE')
+plt.ylabel('STOCK PRICE RETURN % (1-DAY)')
+plt.title('DRIFT METHOD ON STOCK PRICE RETURN % (1-DAY)')
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## DRIFT METHOD ERROR ##
+drift_yt_error = np.subtract(np.array(df_train.ALL_AVG_RETURN_1D[1:]), np.array(one_step_drift_method(df_train.ALL_AVG_RETURN_1D)))
+print(f'TRAIN MSE - NAIVE METHOD: {mse(drift_yt_error).round(4)}')
+
+drift_yf_error = np.subtract(np.array(df_test.ALL_AVG_RETURN_1D)[1:], np.array(one_step_drift_method(df_test.ALL_AVG_RETURN_1D)))
+print(f'TEST MSE - NAIVE METHOD: {mse(drift_yf_error).round(4)}')
+
+#%%
+## DRIFT METHOD STATISTICS ##
+print(f'TRAIN ERROR VARIANCE - DRIFT METHOD: {np.var(drift_yt_error)}')
+print(f'TEST ERROR VARIANCE - DRIFT METHOD: {np.var(drift_yf_error)}')
+
+print(f'TRAIN ERROR MEAN - DRIFT METHOD: {np.mean(drift_yt_error)}')
+print(f'TEST ERROR MEAN - DRIFT METHOD: {np.mean(drift_yf_error)}')
+
+print(f'RMSE - NAIVE METHOD: {mean_squared_error(df_test.ALL_AVG_RETURN_1D, np.array(one_step_predict)[len(df_train)-len(df_test)-1:], squared=False)}')
+
+#%%
+## DRIFT METHOD STATISTICS ##
+print(sm.stats.acorr_ljungbox(drift_yf_error, lags=[5], boxpierce=True, return_df=True))
+print('PREDICTION ERROR VARIANCE APPEARS LESS THAN FORECAST ERROR VARIANCE')
+
+#%%
+## DRIFT METHOD STEMPLOT ##
+# stem_acf('drift-Stem-ACF-Drift-Err', acf_df(drift_yf_error, 5), len(df_train))
+
+#%%
+## RECORD MODEL RESULTS ##
+model_name.append('DRIFT-METHOD')
+model_mse.append(mse(drift_yt_error).round(4))
+model_ljb.append(sm.stats.acorr_ljungbox(drift_yt_error, lags=[5], boxpierce=True).iat[0,0])
+model_error_var.append(np.var(drift_yt_error))
+# model_notes.append('Slightly better')
+
+#%%
+## SEASONAL EXPONENTIAL SMOOTHING ##
+holtt = ets.ExponentialSmoothing(df_train.ALL_AVG_RETURN_1D, trend=None, damped_trend=False, seasonal=None).fit(smoothing_level=0.5)
+holtf = holtt.forecast(steps=len(df_test))
+holtf = pd.DataFrame(holtf)
+
+#%%
+## PLOT TRAIN VS TEST ##
+plt.figure()
+plt.plot(df_train.index, df_train.ALL_AVG_RETURN_1D, label='TRAIN DATA', color='dodgerblue')
+plt.plot(df_test.index, df_test.ALL_AVG_RETURN_1D, label='TEST DATA', color='green')
+plt.plot(df_test.index, np.array(holtf), label='SES METHOD', color='yellow')
+plt.xticks(sector_returns.index[::150], rotation=90, fontsize=10)
+plt.xlabel('DATE')
+plt.ylabel('STOCK PRICE RETURN % (1-DAY)')
+plt.title('SES METHOD ON STOCK PRICE RETURN % (1-DAY)')
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## PLOT TEST ##
+plt.figure()
+plt.plot(df_test.index, df_test.ALL_AVG_RETURN_1D, label='TEST DATA', color='green')
+plt.plot(df_test.index, np.array(holtf), label='SES METHOD', color='yellow')
+plt.xticks(df_test.index[::30], rotation=90, fontsize=10)
+plt.xlabel('DATE')
+plt.ylabel('STOCK PRICE RETURN % (1-DAY)')
+plt.title('SES METHOD ON STOCK PRICE RETURN % (1-DAY)')
+plt.legend(loc='best')
+plt.tight_layout(pad=1)
+plt.show()
+
+#%%
+## SES METHOD ERROR ##
+SES_yt_error = np.subtract(np.array(df_train.ALL_AVG_RETURN_1D), SES_train(df_train.ALL_AVG_RETURN_1D, .5))
+SES_yf_error = np.subtract(np.array(df_test.ALL_AVG_RETURN_1D), holtf[0])
+print(f'TRAIN MSE - SES METHOD: {mse(SES_yt_error).round(4)}')
+print(f'TEST MSE - SES METHOD: {mse(SES_yf_error).round(4)}')
+
+#%%
+## HOLT FORECAST ##
+holtf = holtt.forecast(steps=len(df_test.ALL_AVG_RETURN_1D))
+holtf = pd.DataFrame(holtf)
+
+#%%
+## HOLT FORECAST ERROR ##
+print(f'TRAIN ERROR VARIANCE - DRIFT METHOD: {np.var(SES_yt_error)}')
+print(f'TEST ERROR VARIANCE - DRIFT METHOD: {np.var(SES_yf_error)}')
+
+print(f'TRAIN ERROR MEAN - DRIFT METHOD: {np.mean(SES_yf_error)}')
+print(f'TEST ERROR MEAN - DRIFT METHOD: {np.mean(SES_yf_error)}')
+
+print(f'RMSE - DRIFT METHOD: {mean_squared_error(df_test.ALL_AVG_RETURN_1D, holtf[0], squared=False)}')
+
+#%%
+## ## HOLT FORECAST STATISTICS ##
+print(sm.stats.acorr_ljungbox(SES_yf_error, lags=[5], boxpierce=True, return_df=True))
+print('PREDICTION ERROR VARIANCE APPEARS LESS THAN FORECAST ERROR VARIANCE')
+
+#%%
+## SES METHOD STEMPLOT ##
+# stem_acf('Stem-ACF-SES-Err', acf_df(SES_yf_error, 90), len(df_train))
+
+#%%
+## RECORD MODEL RESULTS ##
+model_name.append('SES-METHOD')
+model_mse.append(mse(SES_yt_error).round(4))
+model_ljb.append(sm.stats.acorr_ljungbox(SES_yt_error,lags=[5], boxpierce=True).iat[0,0])
+model_error_var.append(np.var(SES_yt_error))
+# model_notes.append('Slightly better')
+
+#%%
+## HOLT-WINTERS ##
+
+# DEFINE FEATURES
+HW_features = sector_returns[['HOT_AVG_RETURN_1D', 'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'DC_AVG_RETURN_1D', 'ALL_AVG_RETURN_1D']]
+
+# INITIALIZE MODEL
+HW_model = ets.ExponentialSmoothing(HW_features.ALL_AVG_RETURN_1D, seasonal_periods=144, trend=None, seasonal='add').fit()
+
+#%%
+# FORECAST TRAIN / TEST
+HW_train = HW_model.forecast(steps=X_train.shape[0])
+HW_train_df = pd.DataFrame(HW_train, columns=['ALL_AVG_RETURN_1D']).set_index(X_train.index)
+
+HW_test = HW_model.forecast(steps=X_test.shape[0])
+HW_test_df = pd.DataFrame(HW_test, columns=['ALL_AVG_RETURN_1D']).set_index(X_test.index)
+
+#%%
+# HW MODEL ASSESSMENT
+HW_train_error = np.array(df_train['ALL_AVG_RETURN_1D'] - HW_train_df['ALL_AVG_RETURN_1D'])
+HW_test_error = np.array(df_test['ALL_AVG_RETURN_1D'] - HW_test_df['ALL_AVG_RETURN_1D'])
+
+print(HW_train_error)
+print(HW_test_error)
+
+#%%
+# TRAIN SET PREDICTION
+hw_train_mean_var = rolling_mean_var(HW_train)
+fig, (ax1, ax2) = plt.subplots(2, 1)
+fig.suptitle('ROLLING MEAN/VAR OF H-W PREDICTION DATA')
+ax1.plot(hw_train_mean_var.index, hw_train_mean_var['ROLLING MEAN'])
+ax1.set_ylabel('ROLLING MEAN')
+ax2.plot(hw_train_mean_var.index, hw_train_mean_var['ROLLING VARIANCE'])
+ax2.set_xlabel('DATE')
+ax2.set_ylabel('ROLLING VARIANCE')
 plt.show()
 
 
+#%%
+## RECORD MODEL RESULTS ##
+model_name.append('HOLT-WINTERS')
+model_mse.append(mse(HW_train_error).round(4))
+model_ljb.append(sm.stats.acorr_ljungbox(HW_train_error, lags=[5], boxpierce=True).iat[0,0])
+model_error_var.append(np.var(HW_train_error))
+# model_notes.append('FLAT PREDICTION')
 
 #%%
+## MODEL SELECTION DATAFRAME ##
+df_models = pd.DataFrame()
+df_models['MODELS'] = model_name
+df_models['MSE'] = model_mse
+df_models['LJB'] = model_ljb
+df_models['ERROR_VAR'] = model_error_var
+#df_models['NOTES'] = model_notes
+print(df_models.head())
+
+#%%
+## SAVE MODEL RESULTS ##
+df_models.to_csv(current_folder + 'models_results.csv')
+
+#%%
+
+
+
+
+#%%
+## CONFIDENCE INTERVALS ##
+intervals = model.conf_int()
+for i in range(na):
+    print("CONFIDENCE INTERVAL FOR a{}".format(i), "is:", intervals[i])
+    print("P-VALUE FOR a{}".format(i), "is:", model.pvalues[i])
+    print("STANDARD ERROR FOR a{}".format(i), "is:", model.bse[i])
+    print("\n")
+
+for i in range(na):
+    print("CONFIDENCE INTERVAL FOR b{}".format(i), "is:", intervals[i + na])
+    print("P-VALUE FOR b{}".format(i), "is:", model.pvalues[i + na])
+    print("STANDARD ERROR FOR b{}".format(i), "is:", model.bse[i + na])
+    print("\n")
+
+#%%
+

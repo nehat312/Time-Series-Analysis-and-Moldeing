@@ -642,8 +642,20 @@ def gpac_from_arma_process(ar, ma, lags, samples, k, j):
     gpac_plot(gpac_df)
     ACF_PACF_Plot(y, lags)
     return gpac_df
+#%%
+## WORST FEATURE ##
+def worst_feature(p_value_series):
+    return p_value_series.idxmax()
 
+#%%
+## NEW X TRAIN ##
+def new_X_train(worst_feature,old_x_train):
+    return old_x_train.drop(columns=[worst_feature])
 
+#%%
+## AIC BIC R^2 ##
+def aic_bic_rsquared_df(fitted_model):
+    return pd.DataFrame.from_dict({'index':[0],'aic':fitted_model.aic,'bic':fitted_model.bic,'adj_rsquared':fitted_model.rsquared_adj})
 
 
 #%%
