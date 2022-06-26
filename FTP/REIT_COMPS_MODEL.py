@@ -1,6 +1,8 @@
 #%% [markdown]
+## 6313 - FTP ##
+## NATE EHAT ##
 
-## REIT TRADING COMPS ##
+## REIT TRADING COMPARABLES ##
 
 #%% [markdown]
 ### **ANALYSIS SECTORS:**
@@ -200,7 +202,7 @@ print(sector_comps.info())
 print(sector_comps.columns)
 
 #%%
-## VISUALIZATION VARIABLES ##
+## FEATURE VARIABLES ##
 sector_return_cols = ['ALL_AVG_RETURN_1D', 'OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN_1D',
                       'NL_AVG_RETURN_1D', 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D', 'HC_AVG_RETURN_1D',
                       'IND_AVG_RETURN_1D', 'SS_AVG_RETURN_1D', 'DC_AVG_RETURN_1D']
@@ -219,19 +221,9 @@ print(sector_returns.info())
 # REFINE START DATE (ITERATIVE PROCESS)
 
 # new_start_date = '1/1/2004' #'7/1/2009' #'4/1/2009' #'1/2/2009'
-#
+
 # sector_returns = sector_returns[sector_returns.index >= new_start_date]
 # print(sector_returns.info())
-
-
-#%% [markdown]
-### TIME SERIES ANALYSIS ###
-    ## TIME SERIES STATISTICS
-    ## ROLLING MEAN / VARIANCE
-    ## ADF TEST
-    ## KPSS TEST
-    ## AUTOCORRELATION
-
 
 #%%
 ## TIME SERIES PLOT ##
@@ -240,6 +232,20 @@ fig, axes = plt.subplots(1,1,figsize=(12,8))
 
 for i in sector_returns.columns:
     sns.lineplot(x=sector_returns.index, y=sector_returns[i], legend='full') #hue=sector_returns[i], #['ALL_AVG_RETURN_1D']
+plt.title('1-DAY PRICE RETURN (%) (1/2000-6/2022)')
+plt.xlabel('DATE')
+plt.ylabel('1-DAY PRICE RETURN (%)')
+plt.tight_layout(pad=1)
+#plt.grid()
+plt.legend(loc='best')
+plt.show()
+
+#%%
+## TIME SERIES PLOT ##
+fig, axes = plt.subplots(1,1,figsize=(12,8))
+# plt.figure(figsize=(10,8))
+
+sns.lineplot(x=sector_returns.index, y=sector_returns['ALL_AVG_RETURN_1D'], legend='brief') #hue=sector_returns[i], #['ALL_AVG_RETURN_1D']
 plt.title('1-DAY PRICE RETURN (%) (1/2000-6/2022)')
 plt.xlabel('DATE')
 plt.ylabel('1-DAY PRICE RETURN (%)')
