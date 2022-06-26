@@ -243,8 +243,6 @@ plt.show()
 #%%
 ## TIME SERIES PLOT ##
 fig, axes = plt.subplots(1,1,figsize=(12,8))
-# plt.figure(figsize=(10,8))
-
 sns.lineplot(x=sector_returns.index, y=sector_returns['ALL_AVG_RETURN_1D'], legend='brief') #hue=sector_returns[i], #['ALL_AVG_RETURN_1D']
 plt.title('1-DAY PRICE RETURN (%) (1/2000-6/2022)')
 plt.xlabel('DATE')
@@ -252,28 +250,6 @@ plt.ylabel('1-DAY PRICE RETURN (%)')
 plt.tight_layout(pad=1)
 #plt.grid()
 plt.legend(loc='best')
-plt.show()
-
-#%%
-print(sector_returns.columns)
-
-# 'OFF_AVG_RETURN_1D', 'RESI_AVG_RETURN_1D', 'HOT_AVG_RETURN_1D', 'NL_AVG_RETURN_1D',
-# 'SC_AVG_RETURN_1D', 'MALL_AVG_RETURN_1D', 'HC_AVG_RETURN_1D', 'IND_AVG_RETURN_1D',
-# 'SS_AVG_RETURN_1D', 'DC_AVG_RETURN_1D', 'ALL_AVG_RETURN_1D'
-
-#%%
-
-#%%
-plt.figure(figsize=(16,12))
-plt.subplot(1,1,1)
-sns.lineplot(x=sector_returns.index, y=sector_returns, hue=sector_returns, palette='mako') #['ALL_AVG_RETURN_1D']
-plt.title('ALL SECTORS: 1-DAY AVG PRICE RETURN (%) (1/2000-6/2022)') #, fontsize=12
-plt.xlabel('DATE')
-plt.ylabel('1-DAY PRICE RETURN (%)')
-plt.tight_layout(pad=1)
-
-# plt.legend(loc='best')
-
 plt.show()
 
 #%%
@@ -353,11 +329,6 @@ plt.tight_layout(pad=1)
 
 plt.show()
 
-#%%
-# for col in sector_returns.columns:
-#     for i in range(1,6,1):
-#         for j in range(1,3,1):
-
 
 #%%
 ## TIME SERIES STATISTICS ##
@@ -378,19 +349,6 @@ for i in sector_returns.columns:
 #rolling_mean_var_plots(rolling_mean_var(df_2[0]), df_2_index)
 
 plt.show()
-
-
-#%%
-## AUTO-CORRELATION FUNCTION ##
-
-acf_stemplot(0, acf_df(y, 20), 20)
-
-
-#%%
-## AUTO-CORRELATION PLOT ##
-
-
-
 
 
 #%%
@@ -1023,25 +981,6 @@ print(df_models.head())
 ## SAVE MODEL RESULTS ##
 df_models.to_csv(current_folder + 'models_results.csv')
 
-#%%
-
-
-
-
-#%%
-## CONFIDENCE INTERVALS ##
-intervals = model.conf_int()
-for i in range(na):
-    print("CONFIDENCE INTERVAL FOR a{}".format(i), "is:", intervals[i])
-    print("P-VALUE FOR a{}".format(i), "is:", model.pvalues[i])
-    print("STANDARD ERROR FOR a{}".format(i), "is:", model.bse[i])
-    print("\n")
-
-for i in range(na):
-    print("CONFIDENCE INTERVAL FOR b{}".format(i), "is:", intervals[i + na])
-    print("P-VALUE FOR b{}".format(i), "is:", model.pvalues[i + na])
-    print("STANDARD ERROR FOR b{}".format(i), "is:", model.bse[i + na])
-    print("\n")
 
 #%%
 
